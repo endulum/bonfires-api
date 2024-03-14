@@ -113,13 +113,18 @@ describe('user client ops', () => {
   })
 
   describe('view a user profile', () => {
+    test('GET /user/:id - 401 if not logged in', async () => {
+      const response = await reqShort('/user/demo-user-0', 'get', null)
+      expect(response.status).toBe(401)
+    })
+
     test('GET /user/:id - 404 if user does not exist', async () => {
-      const response = await reqShort('/user/demo-user-0', 'get')
+      const response = await reqShort('/user/demo-user-0', 'get', token)
       expect(response.status).toBe(404)
     })
 
     test('GET /user/:id - 200 and returns user details', async () => {
-      const response = await reqShort('/user/demo-user-2', 'get')
+      const response = await reqShort('/user/demo-user-2', 'get', token)
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('username')
     })

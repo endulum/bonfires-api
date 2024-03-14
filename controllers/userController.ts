@@ -52,7 +52,7 @@ userController.authenticate = asyncHandler(async (req, res, next) => {
 })
 
 userController.doesUserExist = asyncHandler(async (req, res, next) => {
-  const user = await User.findByNameOrId(req.params.id)
+  const user = await User.findByNameOrId(req.params.user)
   if (user === null) res.status(404).send('User not found.')
   else {
     req.requestedUser = user
@@ -66,15 +66,12 @@ userController.areYouThisUser = asyncHandler(async (req, res, next) => {
   } else next()
 })
 
-userController.getUser = [
-  userController.doesUserExist,
-  asyncHandler(async (req, res) => {
-    res.status(200).json({
-      username: req.requestedUser.username,
-      id: req.requestedUser.id
-    })
+userController.getUser = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    username: req.requestedUser.username,
+    id: req.requestedUser.id
   })
-]
+})
 
 const usernameValidation = body('username')
   .trim()

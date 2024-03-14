@@ -4,8 +4,12 @@ import userController from '../controllers/userController'
 
 const router = express.Router()
 
-router.route('/user/:id')
-  .get(userController.getUser)
+router.route('/user/:user')
+  .get(
+    userController.authenticate,
+    userController.doesUserExist,
+    userController.getUser
+  )
   .put(
     userController.authenticate,
     userController.doesUserExist,
