@@ -1,11 +1,33 @@
-# Fullstack Typescript - Backend Template
-A template for a TypeScript backend. Designed to work with the [Frontend Template.](https://github.com/endulum/ts-frontend-template)
-
-## Behavior
-This template comes with a User object model and controller, and endpoints for user authorization, creation, and editing. Users can create and log into accounts, being able to access protected routes using the token given to them from the `/login` route. Users can change their own details - in this template currently their only details are their username and password - and view one another's profiles.
+# Bonfires (API)
+Bonfires is a simple web app allowing users to start "camps" with one another and send messages in them. This repo hosts the API of Bonfires.
 
 ## Technologies
 - Express as the server framework
 - MongoDB as the server database
 - Style enforced with ESLint ("Standard with TypeScript")
 - Functionality enforced with Jest + Supertest testing
+
+## Behavior Checklist
+### Users
+- [x] can create user accounts
+- [x] can "log" in and out of user accounts
+- [ ] can view a user's details
+  - [ ] can show mutual channels between logged-in user and target user
+- [x] can edit own details 
+### Channels
+- [ ] can create channels
+  - [ ] channel creator is automatically admin of the channel
+- [ ] can view a channel's details
+- [ ] can invite other users to a channel
+- [ ] can leave a channel
+  - [ ] being the last user to leave a channel deletes the channel
+- [ ] can change own display name per channel
+- [ ] channels have singular admins with special abilities:
+  - [ ] can edit channel details
+  - [ ] can kick a user from channel
+  - [ ] can pass admin role to another user in channel
+  - [ ] cannot leave a channel until admin role is passed
+### Messages
+- [ ] can send messages to a channel
+- [ ] can remove own messages
+- [ ] admins can remove any messages
