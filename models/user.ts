@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Document, type Model, type CallbackError } from 'mongoose'
+import mongoose, { Schema, type Types, type Document, type Model, type CallbackError } from 'mongoose'
 import bcrypt from 'bcryptjs'
 
 export interface IUser {
@@ -7,6 +7,7 @@ export interface IUser {
 }
 
 export interface IUserDocument extends IUser, Document {
+  id: Types.ObjectId
   setPassword: (password: string) => Promise<void>
   checkPassword: (password: string) => Promise<boolean>
 }

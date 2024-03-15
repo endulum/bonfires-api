@@ -8,6 +8,7 @@ declare global {
       requestedChannel: IChannelDocument // same as above but for channels
       loggingInUser: IUserDocument // for logging in
       authenticatedUser: IUserDocument // for protected routes
+      existingUser: IUserDocument // for validation chains
     }
   }
 }

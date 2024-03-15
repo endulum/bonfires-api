@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Types } from 'mongoose'
+import mongoose, { Schema, type Types, type Document } from 'mongoose'
 import type { IUserDocument } from './user'
 
 export interface IChannel {
@@ -7,7 +7,7 @@ export interface IChannel {
   users: Types.ObjectId[]
 }
 
-export interface IChannelDocument extends IChannel {
+export interface IChannelDocument extends IChannel, Document {
   removeFromChannel: (user: IUserDocument) => Promise<void>
   inviteToChannel: (user: IUserDocument) => Promise<void>
   promoteToAdmin: (user: IUserDocument) => Promise<void>

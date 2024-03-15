@@ -1,5 +1,4 @@
-import { type Types } from 'mongoose'
-import { type RequestHandler } from 'express'
+import { type RequestHandler, type Request } from 'express'
 import asyncHandler from 'express-async-handler'
 import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
@@ -21,7 +20,7 @@ channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
 })
 
 channelController.areYouInThisChannel = asyncHandler(async (req, res, next) => {
-  if (!req.requestedChannel.users.includes(req.authenticatedUser.id as Types.ObjectId)) {
+  if (!req.requestedChannel.users.includes(req.authenticatedUser.id)) {
     res.status(403).send('You are not a member of this channel.')
   } else next()
 })
@@ -59,6 +58,35 @@ channelController.createChannel = [
       admin: req.authenticatedUser,
       users: [req.authenticatedUser]
     })
+    res.sendStatus(200)
+  })
+]
+
+channelController.inviteToChannel = [
+  body('username')
+    .trim()
+    .isLength({ min: 1 }).withMessage('Please enter a username.').bail()
+    .custom(async (value: string, meta) => {
+      const req = meta.req as unknown as Request
+      const existingUser = await User.findByNameOrId(value)
+      if (existingUser !== null) {
+        req.existingUser = existingUser
+        return true
+      } return await Promise.reject(new Error())
+    }).withMessage('No user with this username exists.').bail()
+    .custom(async (value: string, meta) => {
+      const req = meta.req as unknown as Request
+      if (req.requestedChannel.users.includes(req.existingUser.id)) {
+        return await Promise.reject(new Error())
+      } return true
+    }).withMessage('This user is already in this channel.')
+    .escape(),
+
+  sendErrorsIfAny,
+
+  asyncHandler(async (req, res, next) => {
+    req.requestedChannel.users.push(req.existingUser.id)
+    await req.requestedChannel.save()
     res.sendStatus(200)
   })
 ]

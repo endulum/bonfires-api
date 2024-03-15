@@ -44,4 +44,12 @@ router.route('/channel/:channel')
     channelController.getChannel
   )
 
+router.route('/channel/:channel/invite')
+  .post(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouInThisChannel,
+    channelController.inviteToChannel
+  )
+
 export default router
