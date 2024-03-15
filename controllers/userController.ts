@@ -1,7 +1,8 @@
 import { type RequestHandler } from 'express'
 import jsonwebtoken from 'jsonwebtoken'
 import asyncHandler from 'express-async-handler'
-import { type ValidationChain, body, validationResult } from 'express-validator'
+import { type ValidationChain, body } from 'express-validator'
+import { sendErrorsIfAny } from './helpers'
 import 'dotenv/config'
 import User from '../models/user'
 
@@ -10,23 +11,6 @@ interface IJwtPayload extends jsonwebtoken.JwtPayload {
 }
 
 const secret: string | undefined = process.env.SECRET
-
-const sendErrorsIfAny = asyncHandler(async (req, res, next) => {
-  const errorsArray = validationResult(req).array()
-  if (errorsArray.length > 0) {
-    res.status(422).json({
-      errors: errorsArray.map((err) => {
-        if (err.type === 'field') {
-          return {
-            path: err.path,
-            value: err.value,
-            msg: err.msg
-          }
-        } else return { msg: err.msg }
-      })
-    })
-  } else next()
-})
 
 const userController: Record<string, RequestHandler | Array<RequestHandler | ValidationChain>> = {}
 

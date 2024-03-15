@@ -31,7 +31,7 @@ describe('channel client ops', () => {
         'title',
         [
           { value: '', msg: 'Please enter a title.' },
-          { value: 'a', msg: 'Channel title must be between 2 and 32 character long.' }
+          { value: 'a', msg: 'Channel title must be between 2 and 32 characters long.' }
         ],
         { title: 'My First Camp' },
         '/channels', 'post', userTokens[0]
@@ -39,12 +39,14 @@ describe('channel client ops', () => {
     })
 
     test('POST /channels - 200 and creates a channel with creator as admin', async () => {
-      const response = await reqShort('/channels', 'post', userTokens[0])
+      const response = await reqShort('/channels', 'post', userTokens[0], {
+        title: 'My First Camp'
+      })
       expect(response.status).toBe(200)
       let channel = await Channel.findOne({ title: 'My First Camp' })
       channel = assertDefined(channel)
-      expect(channel.admin).toEqual(users[0].id)
-      expect(channel.users).toEqual([users[0].id])
+      expect(channel.admin.toString()).toEqual(users[0].id)
+      expect(channel.users[0].toString()).toEqual(users[0].id)
       channelId = channel.id
     })
   })
@@ -58,7 +60,7 @@ describe('channel client ops', () => {
     test('GET /channel/:channel - 404 if channel does not exist', async () => {
       const response = await reqShort('/channel/blah', 'get', userTokens[0])
       expect(response.status).toBe(404)
-      expect(response.text).toBe('This channel does not exist.')
+      expect(response.text).toBe('Channel not found.')
     })
 
     test('GET /channel/:channel - 403 if logged-in user is not in this channel', async () => {
