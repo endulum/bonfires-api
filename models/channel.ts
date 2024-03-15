@@ -38,5 +38,5 @@ ChannelSchema.methods.promoteToAdmin = async function (user: IUserDocument) {
   await this.save()
 }
 
-const Channel = mongoose.model<IChannelDocument>('User', ChannelSchema)
+const Channel = mongoose.model<IChannelDocument>('Channel', ChannelSchema)
 export default Channel

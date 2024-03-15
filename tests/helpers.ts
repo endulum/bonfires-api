@@ -32,7 +32,7 @@ export const reqShort = async (
   }
 }
 
-// loop through a given array of possible validation errors
+// loop through a given array of possible validation errors for a field
 // this tests for only one validation error at a time
 export const validationLoop = async (
   fieldName: string,
