@@ -43,6 +43,12 @@ router.route('/channel/:channel')
     channelController.areYouInThisChannel,
     channelController.getChannel
   )
+  .delete(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouInThisChannel,
+    channelController.leaveChannel
+  )
 
 router.route('/channel/:channel/invite')
   .post(

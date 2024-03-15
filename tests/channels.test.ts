@@ -102,4 +102,28 @@ describe('channel client ops', () => {
       expect(response.body.users.length).toBe(2)
     })
   })
+
+  describe('leave the channel', () => {
+    test('DELETE /channel/:channel - 403 if admin', async () => {
+      const response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[0])
+      expect(response.status).toBe(403)
+      expect(response.text).toEqual('You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving.')
+    })
+
+    test('DELETE /channel/:channel - 200 and removes logged-in user from channel', async () => {
+      let response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[1])
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[1])
+      expect(response.status).toBe(403)
+      response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[0])
+      expect(response.status).toBe(200)
+    })
+
+    test('DELETE /channel/:channel - 200 and deletes channel if nobody is left', async () => {
+      const response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[0])
+      expect(response.status).toBe(200)
+      const existingChannel = await Channel.findById(channel.id)
+      expect(existingChannel).toBe(null)
+    })
+  })
 })

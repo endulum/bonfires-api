@@ -85,10 +85,24 @@ channelController.inviteToChannel = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res, next) => {
-    req.requestedChannel.users.push(req.existingUser.id)
-    await req.requestedChannel.save()
+    await req.requestedChannel.inviteToChannel(req.existingUser)
     res.sendStatus(200)
   })
 ]
+
+channelController.leaveChannel = asyncHandler(async (req, res, next) => {
+  if (
+    req.authenticatedUser.id.toString() === req.requestedChannel.admin.toString() &&
+    req.requestedChannel.users.length > 1
+  ) {
+    res.status(403).send('You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving.')
+  } else {
+    await req.requestedChannel.removeFromChannel(req.authenticatedUser)
+    if (req.requestedChannel.users.length === 0) {
+      await Channel.findByIdAndDelete(req.requestedChannel.id)
+    }
+    res.sendStatus(200)
+  }
+})
 
 export default channelController

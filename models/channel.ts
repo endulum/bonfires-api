@@ -22,8 +22,8 @@ const ChannelSchema = new Schema<IChannelDocument>({
 // are these methods necessary? let's just try having them for now
 
 ChannelSchema.methods.removeFromChannel = async function (user: IUserDocument) {
-  this.users = this.users.filter((user: Types.ObjectId) => {
-    return user.toString() !== user.id.toString()
+  this.users = this.users.filter((userId: Types.ObjectId) => {
+    return userId.toString() !== user.id.toString()
   })
   await this.save()
 }
