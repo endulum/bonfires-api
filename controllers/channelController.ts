@@ -2,8 +2,8 @@ import { type RequestHandler, type Request } from 'express'
 import asyncHandler from 'express-async-handler'
 import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
-import User from '../models/user'
-import Channel from '../models/channel'
+import User, { type IUser } from '../models/user'
+import Channel, { type IChannel } from '../models/channel'
 
 const channelController: Record<string, RequestHandler | Array<RequestHandler | ValidationChain>> = {}
 
@@ -11,6 +11,9 @@ channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
   let channel = null
   try {
     channel = await Channel.findById(req.params.channel)
+      .populate('admin')
+      .populate('users')
+      .exec()
   } catch (e) {}
   if (channel === null) res.status(404).send('Channel not found.')
   else {
@@ -20,25 +23,24 @@ channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
 })
 
 channelController.areYouInThisChannel = asyncHandler(async (req, res, next) => {
-  if (!req.requestedChannel.users.includes(req.authenticatedUser.id)) {
+  const isInChannel = req.requestedChannel.users.find(user => {
+    return user.id.toString() === req.authenticatedUser.id.toString()
+  })
+  if (isInChannel === undefined) {
     res.status(403).send('You are not a member of this channel.')
   } else next()
 })
 
 channelController.getChannel = asyncHandler(async (req, res, next) => {
-  const admin = await User.findById(req.requestedChannel.admin)
-  const users = await Promise.all(req.requestedChannel.users.map(async (id) => {
-    const user = await User.findById(id)
-    return user
-  }))
   res.status(200).json({
     title: req.requestedChannel.title,
     admin: {
-      username: admin?.username,
-      id: admin?.id
+      username: (req.requestedChannel.admin as unknown as IUser).username,
+      id: req.requestedChannel.admin.id
     },
-    users: users.map(user => ({
-      username: user?.username, id: user?.id
+    users: req.requestedChannel.users.map(user => ({
+      username: (user as unknown as IUser).username,
+      id: user.id
     }))
   })
 })
