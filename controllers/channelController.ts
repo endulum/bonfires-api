@@ -2,19 +2,14 @@ import { type RequestHandler, type Request } from 'express'
 import asyncHandler from 'express-async-handler'
 import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
-import User, { type IUser } from '../models/user'
-import Channel, { type IChannel } from '../models/channel'
+import User from '../models/user'
+import Channel from '../models/channel'
 
 const channelController: Record<string, RequestHandler | Array<RequestHandler | ValidationChain>> = {}
 
 channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
   let channel = null
-  try {
-    channel = await Channel.findById(req.params.channel)
-      .populate('admin')
-      .populate('users')
-      .exec()
-  } catch (e) {}
+  try { channel = await Channel.findById(req.params.channel) } catch (e) {}
   if (channel === null) res.status(404).send('Channel not found.')
   else {
     req.requestedChannel = channel
@@ -23,24 +18,26 @@ channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
 })
 
 channelController.areYouInThisChannel = asyncHandler(async (req, res, next) => {
-  const isInChannel = req.requestedChannel.users.find(user => {
-    return user.id.toString() === req.authenticatedUser.id.toString()
-  })
-  if (isInChannel === undefined) {
+  const isInChannel = await req.requestedChannel.isInChannel(req.authenticatedUser)
+  if (!isInChannel) {
     res.status(403).send('You are not a member of this channel.')
   } else next()
 })
 
 channelController.getChannel = asyncHandler(async (req, res, next) => {
+  const admin = await User.findById(req.requestedChannel.admin)
+  const users = await Promise.all(req.requestedChannel.users.map(async (userId) => {
+    return await User.findById(userId)
+  }))
   res.status(200).json({
     title: req.requestedChannel.title,
     admin: {
-      username: (req.requestedChannel.admin as unknown as IUser).username,
-      id: req.requestedChannel.admin.id
+      username: admin?.username,
+      id: admin?.id
     },
-    users: req.requestedChannel.users.map(user => ({
-      username: (user as unknown as IUser).username,
-      id: user.id
+    users: users.map(user => ({
+      username: user?.username,
+      id: user?.id
     }))
   })
 })
@@ -78,9 +75,8 @@ channelController.inviteToChannel = [
     }).withMessage('No user with this username exists.').bail()
     .custom(async (value: string, meta) => {
       const req = meta.req as unknown as Request
-      if (req.requestedChannel.users.includes(req.existingUser.id)) {
-        return await Promise.reject(new Error())
-      } return true
+      const isInChannel = await req.requestedChannel.isInChannel(req.existingUser)
+      return isInChannel ? await Promise.reject(new Error()) : true
     }).withMessage('This user is already in this channel.')
     .escape(),
 
@@ -93,10 +89,8 @@ channelController.inviteToChannel = [
 ]
 
 channelController.leaveChannel = asyncHandler(async (req, res, next) => {
-  if (
-    req.authenticatedUser.id.toString() === req.requestedChannel.admin.toString() &&
-    req.requestedChannel.users.length > 1
-  ) {
+  const isAdmin = await req.requestedChannel.isAdminOfChannel(req.authenticatedUser)
+  if (isAdmin && req.requestedChannel.users.length > 1) {
     res.status(403).send('You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving.')
   } else {
     await req.requestedChannel.removeFromChannel(req.authenticatedUser)

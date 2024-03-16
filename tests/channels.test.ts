@@ -1,29 +1,28 @@
 import './mongoConfigTesting'
 import { assertDefined, reqShort, validationLoop } from './helpers'
-import User, { type IUserDocument } from '../models/user'
-import Channel, { type IChannelDocument } from '../models/channel'
+import User from '../models/user'
+import Channel from '../models/channel'
 
-const users: IUserDocument[] = []
-const userTokens: string[] = []
+let users: Array<{
+  username: string
+  id: string
+  token: string
+}> = []
 
 beforeAll(async () => {
-  await Promise.all([
-    'demo-user-1', 'demo-user-2', 'demo-user-3'
-  ].map(async username => {
-    const user = await User.create({
-      username,
-      password: 'password'
-    })
-    users.push(user)
-    const response = await reqShort('/login', 'post', null,
-      { username, password: 'password' }
-    )
-    userTokens.push(response.body.token as string)
+  users = await Promise.all(['demo-1', 'demo-2', 'demo-1'].map(async (username) => {
+    const userDocument = await User.create({ username, password: 'password' })
+    const response = await reqShort('/login', 'post', null, { username, password: 'password' })
+    return {
+      username: userDocument.username,
+      id: userDocument.id.toString(),
+      token: response.body.token
+    }
   }))
 })
 
-describe('channel client ops', () => {
-  let channel: IChannelDocument
+describe('basic channel ops', () => {
+  let channelId: string
 
   describe('create a channel', () => {
     test('POST /channels - 422 if input error (username)', async () => {
@@ -34,12 +33,12 @@ describe('channel client ops', () => {
           { value: 'a', msg: 'Channel title must be between 2 and 32 characters long.' }
         ],
         { title: 'My First Camp' },
-        '/channels', 'post', userTokens[0]
+        '/channels', 'post', users[0].token
       )
     })
 
     test('POST /channels - 200 and creates a channel with creator as admin', async () => {
-      const response = await reqShort('/channels', 'post', userTokens[0], {
+      const response = await reqShort('/channels', 'post', users[0].token, {
         title: 'My First Camp'
       })
       expect(response.status).toBe(200)
@@ -47,30 +46,30 @@ describe('channel client ops', () => {
       existingChannel = assertDefined(existingChannel)
       expect(existingChannel.admin.toString()).toEqual(users[0].id)
       expect(existingChannel.users[0].toString()).toEqual(users[0].id)
-      channel = existingChannel
+      channelId = existingChannel.id
     })
   })
 
   describe('view channel details', () => {
     test('GET /channel/:channel - 401 if not logged in', async () => {
-      const response = await reqShort(`/channel/${channel.id}`, 'get', null)
+      const response = await reqShort(`/channel/${channelId}`, 'get', null)
       expect(response.status).toBe(401)
     })
 
     test('GET /channel/:channel - 404 if channel does not exist', async () => {
-      const response = await reqShort('/channel/blah', 'get', userTokens[0])
+      const response = await reqShort('/channel/blah', 'get', users[0].token)
       expect(response.status).toBe(404)
       expect(response.text).toBe('Channel not found.')
     })
 
     test('GET /channel/:channel - 403 if logged-in user is not in this channel', async () => {
-      const response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[1])
+      const response = await reqShort(`/channel/${channelId}`, 'get', users[1].token)
       expect(response.status).toBe(403)
       expect(response.text).toBe('You are not a member of this channel.')
     })
 
     test('GET /channel/:channel - 200 and returns channel details', async () => {
-      const response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[0])
+      const response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
       expect(response.status).toBe(200)
       console.log(response.body)
     })
@@ -86,18 +85,18 @@ describe('channel client ops', () => {
           { value: users[0].username, msg: 'This user is already in this channel.' }
         ],
         { username: users[1].username },
-        `/channel/${channel.id}/invite`, 'post', userTokens[0]
+        `/channel/${channelId}/invite`, 'post', users[0].token
       )
     })
 
     test('POST /channel/:channel/invite - 200 and invites user to channel', async () => {
       let response = await reqShort(
-        `/channel/${channel.id}/invite`, 'post', userTokens[0],
+        `/channel/${channelId}/invite`, 'post', users[0].token,
         { username: users[1].username }
       )
       expect(response.status).toBe(200)
       response = await reqShort(
-        `/channel/${channel.id}`, 'get', userTokens[0]
+        `/channel/${channelId}`, 'get', users[1].token
       )
       expect(response.body.users.length).toBe(2)
     })
@@ -105,24 +104,24 @@ describe('channel client ops', () => {
 
   describe('leave the channel', () => {
     test('DELETE /channel/:channel - 403 if admin', async () => {
-      const response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[0])
+      const response = await reqShort(`/channel/${channelId}`, 'delete', users[0].token)
       expect(response.status).toBe(403)
       expect(response.text).toEqual('You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving.')
     })
 
     test('DELETE /channel/:channel - 200 and removes logged-in user from channel', async () => {
-      let response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[1])
+      let response = await reqShort(`/channel/${channelId}`, 'delete', users[1].token)
       expect(response.status).toBe(200)
-      response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[1])
+      response = await reqShort(`/channel/${channelId}`, 'get', users[1].token)
       expect(response.status).toBe(403)
-      response = await reqShort(`/channel/${channel.id}`, 'get', userTokens[0])
+      response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
       expect(response.status).toBe(200)
     })
 
     test('DELETE /channel/:channel - 200 and deletes channel if nobody is left', async () => {
-      const response = await reqShort(`/channel/${channel.id}`, 'delete', userTokens[0])
+      const response = await reqShort(`/channel/${channelId}`, 'delete', users[0].token)
       expect(response.status).toBe(200)
-      const existingChannel = await Channel.findById(channel.id)
+      const existingChannel = await Channel.findById(channelId)
       expect(existingChannel).toBe(null)
     })
   })

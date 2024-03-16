@@ -8,6 +8,8 @@ export interface IChannel {
 }
 
 export interface IChannelDocument extends IChannel, Document {
+  isInChannel: (user: IUserDocument) => Promise<boolean>
+  isAdminOfChannel: (user: IUserDocument) => Promise<boolean>
   removeFromChannel: (user: IUserDocument) => Promise<void>
   inviteToChannel: (user: IUserDocument) => Promise<void>
   promoteToAdmin: (user: IUserDocument) => Promise<void>
@@ -19,7 +21,15 @@ const ChannelSchema = new Schema<IChannelDocument>({
   users: [{ type: Schema.ObjectId, ref: 'User', required: true }]
 })
 
-// are these methods necessary? let's just try having them for now
+ChannelSchema.methods.isInChannel = async function (user: IUserDocument) {
+  return this.users.find((userId: Types.ObjectId) => {
+    return userId.toString() === user.id.toString()
+  }) !== undefined
+}
+
+ChannelSchema.methods.isAdminOfChannel = async function (user: IUserDocument) {
+  return this.admin.toString() === user.id.toString()
+}
 
 ChannelSchema.methods.removeFromChannel = async function (user: IUserDocument) {
   this.users = this.users.filter((userId: Types.ObjectId) => {

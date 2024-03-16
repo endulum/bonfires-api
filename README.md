@@ -19,14 +19,14 @@ Bonfires is a simple web app allowing users to start "camps" with one another an
   - [x] channel creator is automatically admin of the channel
 - [x] can view a channel's details
 - [x] can invite other users to a channel
-- [ ] can leave a channel
-  - [ ] being the last user to leave a channel deletes the channel
+- [x] can leave a channel
+  - [x] being the last user to leave a channel deletes the channel
 - [ ] can change own display name per channel
 - [ ] channels have singular admins with special abilities:
   - [ ] can edit channel details
   - [ ] can kick a user from channel
   - [ ] can pass admin role to another user in channel
-  - [ ] cannot leave a channel until admin role is passed
+  - [x] cannot leave a channel until admin role is passed
 ### Messages
 - [ ] can send messages to a channel
 - [ ] can remove own messages
