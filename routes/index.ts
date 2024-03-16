@@ -72,4 +72,12 @@ router.route('/channel/:channel/kick')
     channelController.kickUserFromChannel
   )
 
+router.route('/channel/:channel/promote')
+  .post(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouChannelAdmin,
+    channelController.promoteUser
+  )
+
 export default router

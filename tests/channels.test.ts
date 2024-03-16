@@ -181,7 +181,7 @@ describe('channel admin ops', () => {
         [
           { value: '', msg: 'Please enter a username.' },
           { value: 'a', msg: 'No user with this username is in this channel.' },
-          { value: users[0].username, msg: 'You cannot kick yourself.' }
+          { value: users[0].username, msg: 'You cannot perform this action on yourself.' }
         ],
         { username: users[2].username },
         `/channel/${channelId}/kick`, 'post', users[0].token
@@ -197,6 +197,36 @@ describe('channel admin ops', () => {
       expect(response.status).toBe(403)
       response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
       expect(response.body.users.length).toBe(2)
+    })
+  })
+
+  describe('promote a user', () => {
+    test('POST /channel/:channel/promote - 403 if logged-in user is not admin', async () => {
+      const response = await reqShort(`/channel/${channelId}/promote`, 'post', users[1].token)
+      expect(response.status).toBe(403)
+      expect(response.text).toEqual('You are not the admin of this channel.')
+    })
+
+    test('POST /channel/:channel/promote - 422 if input error (username)', async () => {
+      await validationLoop(
+        'username',
+        [
+          { value: '', msg: 'Please enter a username.' },
+          { value: 'a', msg: 'No user with this username is in this channel.' },
+          { value: users[0].username, msg: 'You cannot perform this action on yourself.' }
+        ],
+        { username: users[1].username },
+        `/channel/${channelId}/promote`, 'post', users[0].token
+      )
+    })
+
+    test('POST /channel/:channel/promote - 200 and changes admin', async () => {
+      let response = await reqShort(`/channel/${channelId}/promote`, 'post', users[0].token, {
+        username: users[1].username
+      })
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
+      expect(response.body.admin.id.toString()).toEqual(users[1].id.toString())
     })
   })
 })
