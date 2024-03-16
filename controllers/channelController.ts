@@ -126,4 +126,35 @@ channelController.editChannel = [
   })
 ]
 
+channelController.kickUserFromChannel = [
+  body('username')
+    .trim()
+    .isLength({ min: 1 }).withMessage('Please enter a username.').bail()
+    .custom(async (value: string, meta) => {
+      const req = meta.req as unknown as Request
+      const existingUser = await User.findByNameOrId(value)
+      const isUserInChannel = await req.requestedChannel.isInChannel(existingUser)
+      if (isUserInChannel) {
+        req.existingUser = existingUser
+        return true
+      } return await Promise.reject(new Error())
+    }).withMessage('No user with this username is in this channel.').bail()
+    .custom(async (value: string, meta) => {
+      const req = meta.req as unknown as Request
+      return (
+        req.existingUser.id.toString() === req.authenticatedUser.id.toString()
+      )
+        ? await Promise.reject(new Error())
+        : true
+    }).withMessage('You cannot kick yourself.')
+    .escape(),
+
+  sendErrorsIfAny,
+
+  asyncHandler(async (req, res, next) => {
+    await req.requestedChannel.removeFromChannel(req.existingUser)
+    res.sendStatus(200)
+  })
+]
+
 export default channelController

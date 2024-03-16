@@ -10,7 +10,7 @@ let users: Array<{
 }> = []
 
 beforeAll(async () => {
-  users = await Promise.all(['demo-1', 'demo-2', 'demo-1'].map(async (username) => {
+  users = await Promise.all(['demo-1', 'demo-2', 'demo-3'].map(async (username) => {
     const userDocument = await User.create({ username, password: 'password' })
     const response = await reqShort('/login', 'post', null, { username, password: 'password' })
     return {
@@ -102,7 +102,7 @@ describe('basic channel ops', () => {
     })
   })
 
-  describe('leave the channel', () => {
+  describe('leave a channel', () => {
     test('DELETE /channel/:channel - 403 if admin', async () => {
       const response = await reqShort(`/channel/${channelId}`, 'delete', users[0].token)
       expect(response.status).toBe(403)
@@ -165,6 +165,38 @@ describe('channel admin ops', () => {
       expect(response.status).toBe(200)
       response = await reqShort(`/channel/${channelId}`, 'get', users[1].token)
       expect(response.body.title).toEqual('Our Cool Camp')
+    })
+  })
+
+  describe('kick a user', () => {
+    test('POST /channel/:channel/kick - 403 if logged-in user is not admin', async () => {
+      const response = await reqShort(`/channel/${channelId}/kick`, 'post', users[1].token)
+      expect(response.status).toBe(403)
+      expect(response.text).toEqual('You are not the admin of this channel.')
+    })
+
+    test('POST /channel/:channel/kick - 422 if input error (username)', async () => {
+      await validationLoop(
+        'username',
+        [
+          { value: '', msg: 'Please enter a username.' },
+          { value: 'a', msg: 'No user with this username is in this channel.' },
+          { value: users[0].username, msg: 'You cannot kick yourself.' }
+        ],
+        { username: users[2].username },
+        `/channel/${channelId}/kick`, 'post', users[0].token
+      )
+    })
+
+    test('POST /channel/:channel/kick - 200 and removes user from channel', async () => {
+      let response = await reqShort(`/channel/${channelId}/kick`, 'post', users[0].token, {
+        username: users[2].username
+      })
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[2].token)
+      expect(response.status).toBe(403)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
+      expect(response.body.users.length).toBe(2)
     })
   })
 })

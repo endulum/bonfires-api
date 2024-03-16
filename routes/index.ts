@@ -64,4 +64,12 @@ router.route('/channel/:channel/invite')
     channelController.inviteToChannel
   )
 
+router.route('/channel/:channel/kick')
+  .post(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouChannelAdmin,
+    channelController.kickUserFromChannel
+  )
+
 export default router
