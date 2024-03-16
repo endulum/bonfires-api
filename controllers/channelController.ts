@@ -24,6 +24,13 @@ channelController.areYouInThisChannel = asyncHandler(async (req, res, next) => {
   } else next()
 })
 
+channelController.areYouChannelAdmin = asyncHandler(async (req, res, next) => {
+  const isAdminOfChannel = await req.requestedChannel.isAdminOfChannel(req.authenticatedUser)
+  if (!isAdminOfChannel) {
+    res.status(403).send('You are not the admin of this channel.')
+  } else next()
+})
+
 channelController.getChannel = asyncHandler(async (req, res, next) => {
   const admin = await User.findById(req.requestedChannel.admin)
   const users = await Promise.all(req.requestedChannel.users.map(async (userId) => {
@@ -100,5 +107,23 @@ channelController.leaveChannel = asyncHandler(async (req, res, next) => {
     res.sendStatus(200)
   }
 })
+
+channelController.editChannel = [
+  body('title')
+    .trim()
+    .isLength({ min: 1 }).withMessage('Please enter a channel title.')
+    .bail()
+    .isLength({ max: 64 })
+    .withMessage('Channel titles cannot be more than 64 characters long.')
+    .escape(),
+
+  sendErrorsIfAny,
+
+  asyncHandler(async (req, res, next) => {
+    req.requestedChannel.title = req.body.title
+    await req.requestedChannel.save()
+    res.sendStatus(200)
+  })
+]
 
 export default channelController

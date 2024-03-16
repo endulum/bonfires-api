@@ -126,3 +126,45 @@ describe('basic channel ops', () => {
     })
   })
 })
+
+describe('channel admin ops', () => {
+  let channelId: string
+
+  beforeAll(async () => {
+    const channel = await Channel.create({
+      title: 'My First Camp',
+      admin: users[0].id,
+      users: users.map(user => user.id)
+    })
+    channelId = channel.id
+  })
+
+  describe('edit channel details', () => {
+    test('PUT /channel/:id - 403 if logged-in user is not admin', async () => {
+      const response = await reqShort(`/channel/${channelId}`, 'put', users[1].token)
+      expect(response.status).toBe(403)
+      expect(response.text).toEqual('You are not the admin of this channel.')
+    })
+
+    test('PUT /channel/:channel - 422 if input error (channel title)', async () => {
+      await validationLoop(
+        'title',
+        [
+          { value: '', msg: 'Please enter a channel title.' },
+          { value: Array(100).fill('A').join(''), msg: 'Channel titles cannot be more than 64 characters long.' }
+        ],
+        { title: 'Our Cool Camp' },
+        `/channel/${channelId}`, 'put', users[0].token
+      )
+    })
+
+    test('PUT /channel/:channel - 200 and edits channel details', async () => {
+      let response = await reqShort(`/channel/${channelId}`, 'put', users[0].token, {
+        title: 'Our Cool Camp'
+      })
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[1].token)
+      expect(response.body.title).toEqual('Our Cool Camp')
+    })
+  })
+})

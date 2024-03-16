@@ -43,6 +43,12 @@ router.route('/channel/:channel')
     channelController.areYouInThisChannel,
     channelController.getChannel
   )
+  .put(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouChannelAdmin,
+    channelController.editChannel
+  )
   .delete(
     userController.authenticate,
     channelController.doesChannelExist,
