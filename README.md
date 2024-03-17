@@ -12,7 +12,7 @@ Bonfires is a simple web app allowing users to start "camps" with one another an
 - [x] can create user accounts
 - [x] can "log" in and out of user accounts
 - [x] can view a user's details
-  - [ ] can show mutual channels between logged-in user and target user
+  - [ ] can show mutual channels between logged-in user and target user, including their per-channel display names
 - [x] can edit own details 
 ### Channels
 - [x] can create channels
@@ -21,7 +21,7 @@ Bonfires is a simple web app allowing users to start "camps" with one another an
 - [x] can invite other users to a channel
 - [x] can leave a channel
   - [x] being the last user to leave a channel deletes the channel
-- [ ] can change own display name per channel
+- [x] can change own display name per channel
 - [x] channels have singular admins with special abilities:
   - [x] can edit channel details
   - [x] can kick a user from channel

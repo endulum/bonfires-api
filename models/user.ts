@@ -1,13 +1,19 @@
-import mongoose, { Schema, type Types, type Document, type Model, type CallbackError } from 'mongoose'
+import mongoose, { Schema, Types, type Document, type Model, type CallbackError } from 'mongoose'
 import bcrypt from 'bcryptjs'
+import { type IChannelDocument } from './channel'
+
+interface DisplayName { channel: Types.ObjectId, displayName: string }
 
 export interface IUser {
   username: string
   password: string
+  displayNames: DisplayName[]
 }
 
 export interface IUserDocument extends IUser, Document {
   id: Types.ObjectId
+  changeDisplayName: (channel: IChannelDocument, newName: string) => Promise<void>
+  getDisplayName: (channel: IChannelDocument) => DisplayName | null
   setPassword: (password: string) => Promise<void>
   checkPassword: (password: string) => Promise<boolean>
 }
@@ -18,12 +24,47 @@ interface IUserModel extends Model<IUserDocument> {
 
 const UserSchema = new Schema<IUserDocument>({
   username: { type: String, required: true, match: /^[a-z0-9-]+$/g },
-  password: { type: String, required: true }
+  password: { type: String, required: true },
+  displayNames: [
+    {
+      channel: { type: Types.ObjectId, required: true },
+      displayName: { type: String, required: true }
+    }
+  ]
 })
 
 UserSchema.methods.checkPassword = async function (password: string) {
   const result = await bcrypt.compare(password, (this.password as string))
   return result
+}
+
+UserSchema.methods.changeDisplayName = async function (
+  channel: IChannelDocument,
+  newName: string
+) {
+  if (newName === '') {
+    this.displayNames = this.displayNames.filter(
+      (name: DisplayName) => name.channel.toString() !== channel.id.toString()
+    )
+  } else {
+    const existingChannelIndex: number = this.displayNames.findIndex(
+      (name: DisplayName) => name.channel.toString() === channel.id.toString()
+    )
+    if (existingChannelIndex === -1) {
+      this.displayNames.push({ channel: channel.id, displayName: newName })
+    } else {
+      this.displayNames[existingChannelIndex].displayName = newName
+    }
+  }
+  await this.save()
+}
+
+UserSchema.methods.getDisplayName = function (channel: IChannelDocument) {
+  const existingName: DisplayName = this.displayNames.find(
+    (name: DisplayName) => name.channel.toString() === channel.id.toString()
+  )
+  if (existingName === undefined) return null
+  return existingName.displayName
 }
 
 UserSchema.statics.findByNameOrId = function (nameOrId: string) {

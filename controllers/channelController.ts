@@ -40,11 +40,13 @@ channelController.getChannel = asyncHandler(async (req, res, next) => {
     title: req.requestedChannel.title,
     admin: {
       username: admin?.username,
-      id: admin?.id
+      id: admin?.id,
+      displayName: admin?.getDisplayName(req.requestedChannel) ?? admin?.username
     },
     users: users.map(user => ({
       username: user?.username,
-      id: user?.id
+      id: user?.id,
+      displayName: user?.getDisplayName(req.requestedChannel) ?? user?.username
     }))
   })
 })
@@ -91,6 +93,23 @@ channelController.inviteToChannel = [
 
   asyncHandler(async (req, res, next) => {
     await req.requestedChannel.inviteToChannel(req.existingUser)
+    res.sendStatus(200)
+  })
+]
+
+channelController.editDisplayName = [
+  body('displayName')
+    .trim()
+    .isLength({ max: 64 }).withMessage('Display names cannot be more than 64 characters long.')
+    .escape(),
+
+  sendErrorsIfAny,
+
+  asyncHandler(async (req, res, next) => {
+    await req.authenticatedUser.changeDisplayName(
+      req.requestedChannel,
+      (req.body.displayName as string)
+    )
     res.sendStatus(200)
   })
 ]

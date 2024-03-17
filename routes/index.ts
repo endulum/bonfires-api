@@ -64,6 +64,14 @@ router.route('/channel/:channel/invite')
     channelController.inviteToChannel
   )
 
+router.route('/channel/:channel/name')
+  .post(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouInThisChannel,
+    channelController.editDisplayName
+  )
+
 router.route('/channel/:channel/kick')
   .post(
     userController.authenticate,

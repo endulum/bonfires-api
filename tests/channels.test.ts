@@ -75,6 +75,43 @@ describe('basic channel ops', () => {
     })
   })
 
+  describe('change own display name', () => {
+    test('POST /channel/:channel/name - 403 if logged-in user is not in this channel', async () => {
+      const response = await reqShort(`/channel/${channelId}/name`, 'post', users[1].token)
+      expect(response.status).toBe(403)
+      expect(response.text).toBe('You are not a member of this channel.')
+    })
+
+    test('POST /channel/:channel/name - 422 if input error (display name)', async () => {
+      await validationLoop(
+        'displayName',
+        [
+          { value: Array(100).fill('A').join(''), msg: 'Display names cannot be more than 64 characters long.' }
+        ],
+        { displayName: 'Supreme Overlord' },
+        `/channel/${channelId}/name`, 'post', users[0].token
+      )
+    })
+
+    test('POST /channel/:channel/name - 200 and adds channel-specific display name', async () => {
+      let response = await reqShort(`/channel/${channelId}/name`, 'post', users[0].token, {
+        displayName: 'Supreme Overlord'
+      })
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
+      expect(response.body.admin.displayName).toEqual('Supreme Overlord')
+    })
+
+    test('POST /channel/:channel/name - 200 and can remove channel-specific display name', async () => {
+      let response = await reqShort(`/channel/${channelId}/name`, 'post', users[0].token, {
+        displayName: ''
+      })
+      expect(response.status).toBe(200)
+      response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
+      expect(response.body.admin.displayName).toEqual(users[0].username)
+    })
+  })
+
   describe('invite others to channel', () => {
     test('POST /channel/:channel/invite - 422 if input error (username)', async () => {
       await validationLoop(
