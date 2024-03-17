@@ -139,6 +139,14 @@ describe('basic channel ops', () => {
     })
   })
 
+  describe('see mutual channels when viewing a user', () => {
+    test('GET /user/:user shows mutual channels and corresponding display names of the target user', async () => {
+      const response = await reqShort(`/user/${users[1].id}`, 'get', users[0].token)
+      console.log(response.body)
+      expect(response.body).toHaveProperty('mutualChannels')
+    })
+  })
+
   describe('leave a channel', () => {
     test('DELETE /channel/:channel - 403 if admin', async () => {
       const response = await reqShort(`/channel/${channelId}`, 'delete', users[0].token)

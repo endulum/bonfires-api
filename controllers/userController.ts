@@ -5,6 +5,7 @@ import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
 import 'dotenv/config'
 import User from '../models/user'
+import Channel from '../models/channel'
 
 interface IJwtPayload extends jsonwebtoken.JwtPayload {
   id: string
@@ -51,9 +52,24 @@ userController.areYouThisUser = asyncHandler(async (req, res, next) => {
 })
 
 userController.getUser = asyncHandler(async (req, res) => {
+  // todo: figure out how to get mongoose to do this
+  const channels = await Channel.find({})
+  const mutualChannels = channels.filter(channel =>
+    channel.users.includes(req.requestedUser.id) &&
+    channel.users.includes(req.authenticatedUser.id)
+  )
+
   res.status(200).json({
     username: req.requestedUser.username,
-    id: req.requestedUser.id
+    id: req.requestedUser.id,
+    mutualChannels: mutualChannels.map(channel => (
+      {
+        id: channel.id,
+        title: channel.title,
+        users: channel.users.length,
+        displayName: req.requestedUser.getDisplayName(channel)
+      }
+    ))
   })
 })
 
