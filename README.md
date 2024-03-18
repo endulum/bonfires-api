@@ -1,5 +1,5 @@
 # Bonfires (API)
-Bonfires is a simple web app allowing users to start "camps" with one another and send messages in them. This repo hosts the API of Bonfires.
+Bonfires is a simple messaging web app allowing users to start "camps" with one another and send messages in them. This repo hosts the API of Bonfires.
 
 ## Technologies
 - Express as the server framework
@@ -9,25 +9,21 @@ Bonfires is a simple web app allowing users to start "camps" with one another an
 
 ## Behavior Checklist
 ### Users
-- [x] can create user accounts
-- [x] can "log" in and out of user accounts
-- [x] can view a user's details
-  - [x] can show mutual channels between logged-in user and target user, including their per-channel display names
-- [x] can edit own details 
+- [x] `POST /signup` - creates a user account
+- [x] `POST /login` - returns an authentication token for a user account, provided correct account details
+- [x] `GET /user/:user` - returns a user's details
+- [x] `PUT /user/:user` - edits a user's details
 ### Channels
-- [x] can create channels
-  - [x] channel creator is automatically admin of the channel
-- [x] can view a channel's details
-- [x] can invite other users to a channel
-- [x] can leave a channel
-  - [x] being the last user to leave a channel deletes the channel
-- [x] can change own display name per channel
-- [x] channels have singular admins with special abilities:
-  - [x] can edit channel details
-  - [x] can kick a user from channel
-  - [x] can pass admin role to another user in channel
-  - [x] cannot leave a channel until admin role is passed
+- [x] `GET /channels` - returns all channels the logged-in user is in
+- [x] `POST /channels` - creates a channel, and sets the logged-in user as admin of channel
+- [x] `GET /channel/:id` - returns a channel's details
+- [x] `PUT /channel/:id` - edits a channel's details (admin only)
+- [x] `DELETE /channel/:id` - removes logged-in user from a channel, and deletes the channel if no users remain
+- [x] `POST /channel/:id/invite` - adds a user to a channel by username
+- [x] `POST /channel/:id/kick` - removes a user from a channel by username (admin only)
+- [x] `POST /channel/:id/promote` - passes admin role to another user (admin only)
+- [x] `POST /channel/:id/name` - edits logged-in user's display name for a channel
 ### Messages
-- [x] can send messages to a channel
-- [ ] can remove own messages
-- [ ] admins can remove any messages
+- [x] `GET /channel/:id/messages` - returns all messages posted in a channel
+- [x] `POST /channel/:id/messages` - creates a message in a channel
+- [ ] `DELETE /message/:id` - permanently deletes a message (admin only, otherwise can only delete own messages)
