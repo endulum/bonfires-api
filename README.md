@@ -28,6 +28,6 @@ Bonfires is a simple web app allowing users to start "camps" with one another an
   - [x] can pass admin role to another user in channel
   - [x] cannot leave a channel until admin role is passed
 ### Messages
-- [ ] can send messages to a channel
+- [x] can send messages to a channel
 - [ ] can remove own messages
 - [ ] admins can remove any messages

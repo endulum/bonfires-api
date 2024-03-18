@@ -1,8 +1,9 @@
 import mongoose, { Schema, type Types, type Document } from 'mongoose'
+import { type IUserDocument } from './user'
 
 export interface IMessage {
   channel: Types.ObjectId
-  user: Types.ObjectId
+  user: Types.ObjectId | IUserDocument
   timestamp: Date
   isRemoved: boolean
   content: string

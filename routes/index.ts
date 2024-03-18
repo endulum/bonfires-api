@@ -2,6 +2,7 @@ import express from 'express'
 import asyncHandler from 'express-async-handler'
 import userController from '../controllers/userController'
 import channelController from '../controllers/channelController'
+import messageController from '../controllers/messageController'
 
 const router = express.Router()
 
@@ -86,6 +87,20 @@ router.route('/channel/:channel/promote')
     channelController.doesChannelExist,
     channelController.areYouChannelAdmin,
     channelController.promoteUser
+  )
+
+router.route('/channel/:channel/messages')
+  .get(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouInThisChannel,
+    messageController.getMessages
+  )
+  .post(
+    userController.authenticate,
+    channelController.doesChannelExist,
+    channelController.areYouInThisChannel,
+    messageController.newMessage
   )
 
 export default router
