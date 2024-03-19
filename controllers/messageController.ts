@@ -3,7 +3,6 @@ import asyncHandler from 'express-async-handler'
 import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
 import Message from '../models/message'
-import type { IUserDocument } from '../models/user'
 
 const messageController: Record<string, RequestHandler | Array<RequestHandler | ValidationChain>> = {}
 
@@ -18,8 +17,8 @@ messageController.newMessage = [
 
   asyncHandler(async (req, res, next) => {
     await Message.create({
-      channel: req.requestedChannel.id,
-      user: req.authenticatedUser.id,
+      channel: req.channel.id,
+      user: req.authUser.id,
       content: req.body.content
     })
     res.sendStatus(200)
@@ -27,17 +26,17 @@ messageController.newMessage = [
 ]
 
 messageController.getMessages = asyncHandler(async (req, res, next) => {
-  const messages = await Message.find({ channel: req.requestedChannel })
+  const messages = await Message.find({ channel: req.channel })
     .populate({ path: 'user', model: 'User' }).exec()
-  res.status(200).json(messages.map(message => ({
+  res.status(200).json(messages.map(message => ('username' in message.user && {
     id: message.id,
     content: message.content,
     user: {
-      username: (message.user as IUserDocument).username,
-      id: (message.user as IUserDocument).id,
+      username: message.user.username,
+      id: message.user.id,
       displayName:
-        (message.user as IUserDocument).getDisplayName(req.requestedChannel) ??
-        (message.user as IUserDocument).username
+        message.user.getDisplayName(req.channel) ??
+        message.user.username
     },
     timestamp: message.timestamp,
     isRemoved: message.isRemoved

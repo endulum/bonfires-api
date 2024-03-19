@@ -4,11 +4,10 @@ import { type IChannelDocument } from './models/channel'
 declare global {
   namespace Express {
     interface Request {
-      requestedUser: IUserDocument // for urls where id is in the request params
-      requestedChannel: IChannelDocument // same as above but for channels
-      loggingInUser: IUserDocument // for logging in
-      authenticatedUser: IUserDocument // for protected routes
-      existingUser: IUserDocument // for validation chains
+      authUser: IUserDocument // the authenticated user
+      user: IUserDocument // the user indicated by :user
+      existingUser: IUserDocument // for validation chains involving users
+      channel: IChannelDocument // the channel indicated by :channel
     }
   }
 }

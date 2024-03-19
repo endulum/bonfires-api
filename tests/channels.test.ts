@@ -44,8 +44,11 @@ describe('basic channel ops', () => {
       expect(response.status).toBe(200)
       let existingChannel = await Channel.findOne({ title: 'My First Camp' })
       existingChannel = assertDefined(existingChannel)
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       expect(existingChannel.admin.toString()).toEqual(users[0].id)
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       expect(existingChannel.users[0].toString()).toEqual(users[0].id)
+      // i know what i'm doing!!!
       channelId = existingChannel.id
     })
   })
@@ -141,9 +144,16 @@ describe('basic channel ops', () => {
 
   describe('see mutual channels when viewing a user', () => {
     test('GET /user/:user shows mutual channels and corresponding display names of the target user', async () => {
+      const dummyChannel = await Channel.create({
+        title: 'You Shouldn\'t See This',
+        admin: users[1].id,
+        users: [users[1].id]
+      })
       const response = await reqShort(`/user/${users[1].id}`, 'get', users[0].token)
       console.log(response.body)
       expect(response.body).toHaveProperty('mutualChannels')
+      expect(response.body.mutualChannels.length).toBe(1)
+      await Channel.findByIdAndDelete(dummyChannel.id)
     })
   })
 

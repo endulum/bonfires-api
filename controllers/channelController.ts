@@ -9,45 +9,49 @@ const channelController: Record<string, RequestHandler | Array<RequestHandler | 
 
 channelController.doesChannelExist = asyncHandler(async (req, res, next) => {
   let channel = null
-  try { channel = await Channel.findById(req.params.channel) } catch (e) {}
+  try {
+    channel = await Channel.findById(req.params.channel)
+      .populate({ path: 'admin', model: 'User' })
+      .populate({ path: 'users', model: 'User' })
+      .exec()
+  } catch (e) {}
   if (channel === null) res.status(404).send('Channel not found.')
   else {
-    req.requestedChannel = channel
+    req.channel = channel
     next()
   }
 })
 
 channelController.areYouInThisChannel = asyncHandler(async (req, res, next) => {
-  const isInChannel = await req.requestedChannel.isInChannel(req.authenticatedUser)
+  const isInChannel = await req.channel.isInChannel(req.authUser)
   if (!isInChannel) {
     res.status(403).send('You are not a member of this channel.')
   } else next()
 })
 
 channelController.areYouChannelAdmin = asyncHandler(async (req, res, next) => {
-  const isAdminOfChannel = await req.requestedChannel.isAdminOfChannel(req.authenticatedUser)
+  const isAdminOfChannel = await req.channel.isAdminOfChannel(req.authUser)
   if (!isAdminOfChannel) {
     res.status(403).send('You are not the admin of this channel.')
   } else next()
 })
 
 channelController.getChannel = asyncHandler(async (req, res, next) => {
-  const admin = await User.findById(req.requestedChannel.admin)
-  const users = await Promise.all(req.requestedChannel.users.map(async (userId) => {
-    return await User.findById(userId)
-  }))
-  res.status(200).json({
-    title: req.requestedChannel.title,
+  res.status(200).json('username' in req.channel.admin && {
+    title: req.channel.title,
     admin: {
-      username: admin?.username,
-      id: admin?.id,
-      displayName: admin?.getDisplayName(req.requestedChannel) ?? admin?.username
+      username: req.channel.admin.username,
+      id: req.channel.admin.id,
+      displayName: req.channel.admin.getDisplayName(req.channel) ??
+          req.channel.admin.username
     },
-    users: users.map(user => ({
-      username: user?.username,
-      id: user?.id,
-      displayName: user?.getDisplayName(req.requestedChannel) ?? user?.username
-    }))
+    users: req.channel.users.map(user =>
+      'username' in user && {
+        username: user.username,
+        id: user.id,
+        displayName: user.getDisplayName(req.channel) ?? user.username
+      }
+    )
   })
 })
 
@@ -63,8 +67,8 @@ channelController.createChannel = [
   asyncHandler(async (req, res, next) => {
     await Channel.create({
       title: req.body.title,
-      admin: req.authenticatedUser,
-      users: [req.authenticatedUser]
+      admin: req.authUser,
+      users: [req.authUser]
     })
     res.sendStatus(200)
   })
@@ -75,7 +79,7 @@ channelController.inviteToChannel = [
     .trim()
     .isLength({ min: 1 }).withMessage('Please enter a username.').bail()
     .custom(async (value: string, meta) => {
-      const req = meta.req as unknown as Request
+      const req = meta.req as Request
       const existingUser = await User.findByNameOrId(value)
       if (existingUser !== null) {
         req.existingUser = existingUser
@@ -83,8 +87,8 @@ channelController.inviteToChannel = [
       } return await Promise.reject(new Error())
     }).withMessage('No user with this username exists.').bail()
     .custom(async (value: string, meta) => {
-      const req = meta.req as unknown as Request
-      const isInChannel = await req.requestedChannel.isInChannel(req.existingUser)
+      const req = meta.req as Request
+      const isInChannel = await req.channel.isInChannel(req.existingUser)
       return isInChannel ? await Promise.reject(new Error()) : true
     }).withMessage('This user is already in this channel.')
     .escape(),
@@ -92,7 +96,7 @@ channelController.inviteToChannel = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res, next) => {
-    await req.requestedChannel.inviteToChannel(req.existingUser)
+    await req.channel.inviteToChannel(req.existingUser)
     res.sendStatus(200)
   })
 ]
@@ -106,8 +110,8 @@ channelController.editDisplayName = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res, next) => {
-    await req.authenticatedUser.changeDisplayName(
-      req.requestedChannel,
+    await req.authUser.changeDisplayName(
+      req.channel,
       (req.body.displayName as string)
     )
     res.sendStatus(200)
@@ -115,13 +119,13 @@ channelController.editDisplayName = [
 ]
 
 channelController.leaveChannel = asyncHandler(async (req, res, next) => {
-  const isAdmin = await req.requestedChannel.isAdminOfChannel(req.authenticatedUser)
-  if (isAdmin && req.requestedChannel.users.length > 1) {
+  const isAdmin = await req.channel.isAdminOfChannel(req.authUser)
+  if (isAdmin && req.channel.users.length > 1) {
     res.status(403).send('You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving.')
   } else {
-    await req.requestedChannel.removeFromChannel(req.authenticatedUser)
-    if (req.requestedChannel.users.length === 0) {
-      await Channel.findByIdAndDelete(req.requestedChannel.id)
+    await req.channel.removeFromChannel(req.authUser)
+    if (req.channel.users.length === 0) {
+      await Channel.findByIdAndDelete(req.channel.id)
     }
     res.sendStatus(200)
   }
@@ -139,8 +143,8 @@ channelController.editChannel = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res, next) => {
-    req.requestedChannel.title = req.body.title
-    await req.requestedChannel.save()
+    req.channel.title = req.body.title
+    await req.channel.save()
     res.sendStatus(200)
   })
 ]
@@ -149,18 +153,18 @@ const userActionValidation = body('username')
   .trim()
   .isLength({ min: 1 }).withMessage('Please enter a username.').bail()
   .custom(async (value: string, meta) => {
-    const req = meta.req as unknown as Request
+    const req = meta.req as Request
     const existingUser = await User.findByNameOrId(value)
-    const isUserInChannel = await req.requestedChannel.isInChannel(existingUser)
+    const isUserInChannel = await req.channel.isInChannel(existingUser)
     if (isUserInChannel) {
       req.existingUser = existingUser
       return true
     } return await Promise.reject(new Error())
   }).withMessage('No user with this username is in this channel.').bail()
   .custom(async (value: string, meta) => {
-    const req = meta.req as unknown as Request
+    const req = meta.req as Request
     return (
-      req.existingUser.id.toString() === req.authenticatedUser.id.toString()
+      req.existingUser.id.toString() === req.authUser.id.toString()
     )
       ? await Promise.reject(new Error())
       : true
@@ -171,7 +175,7 @@ channelController.kickUserFromChannel = [
   userActionValidation,
   sendErrorsIfAny,
   asyncHandler(async (req, res, next) => {
-    await req.requestedChannel.removeFromChannel(req.existingUser)
+    await req.channel.removeFromChannel(req.existingUser)
     res.sendStatus(200)
   })
 ]
@@ -180,7 +184,7 @@ channelController.promoteUser = [
   userActionValidation,
   sendErrorsIfAny,
   asyncHandler(async (req, res, next) => {
-    await req.requestedChannel.promoteToAdmin(req.existingUser)
+    await req.channel.promoteToAdmin(req.existingUser)
     res.sendStatus(200)
   })
 ]

@@ -27,7 +27,7 @@ userController.authenticate = asyncHandler(async (req, res, next) => {
       const user = await User.findByNameOrId(decoded.id)
       if (user === null) res.status(404).send('The user this token belongs to could not be found.')
       else {
-        req.authenticatedUser = user
+        req.authUser = user
         next()
       }
     } catch (err) {
@@ -40,34 +40,33 @@ userController.doesUserExist = asyncHandler(async (req, res, next) => {
   const user = await User.findByNameOrId(req.params.user)
   if (user === null) res.status(404).send('User not found.')
   else {
-    req.requestedUser = user
+    req.user = user
     next()
   }
 })
 
 userController.areYouThisUser = asyncHandler(async (req, res, next) => {
-  if (req.requestedUser.id !== req.authenticatedUser.id) {
+  if (req.user.id !== req.authUser.id) {
     res.status(403).send('You are not this user.')
   } else next()
 })
 
 userController.getUser = asyncHandler(async (req, res) => {
-  // todo: figure out how to get mongoose to do this
-  const channels = await Channel.find({})
-  const mutualChannels = channels.filter(channel =>
-    channel.users.includes(req.requestedUser.id) &&
-    channel.users.includes(req.authenticatedUser.id)
-  )
+  const mutualChannels = await Channel.find({
+    users: {
+      $all: [req.user.id, req.authUser.id]
+    }
+  })
 
   res.status(200).json({
-    username: req.requestedUser.username,
-    id: req.requestedUser.id,
+    username: req.user.username,
+    id: req.user.id,
     mutualChannels: mutualChannels.map(channel => (
       {
         id: channel.id,
         title: channel.title,
         users: channel.users.length,
-        displayName: req.requestedUser.getDisplayName(channel)
+        displayName: req.user.getDisplayName(channel)
       }
     ))
   })
@@ -82,11 +81,10 @@ const usernameValidation = body('username')
     const existingUser = await User.findByNameOrId(value)
     if (existingUser !== null) {
       if (
-        req.authenticatedUser !== null &&
-        req.authenticatedUser.id === existingUser.id
-      ) { // only when logged in and choosing a new username
-        return true
-      } return await Promise.reject(new Error())
+        req.authUser !== null &&
+        req.authUser.id === existingUser.id
+      ) return true
+      return await Promise.reject(new Error())
     } return true
   }).withMessage('A user already exists with this username.').bail()
   .escape()
@@ -133,8 +131,8 @@ userController.logIn = [
     .custom(async (value: string, { req }) => {
       const existingUser = await User.findByNameOrId(req.body.username as string)
       if (existingUser === null) return await Promise.reject(new Error())
-      req.loggingInUser = existingUser
-      const match: boolean = await req.loggingInUser.checkPassword(value)
+      req.existingUser = existingUser
+      const match: boolean = await req.existingUser.checkPassword(value)
       return match ? true : await Promise.reject(new Error())
     }).withMessage('Incorrect username or password.')
     .escape(),
@@ -143,7 +141,7 @@ userController.logIn = [
 
   asyncHandler(async (req, res) => {
     const token = jsonwebtoken.sign(
-      { username: req.loggingInUser.username, id: req.loggingInUser.id },
+      { username: req.existingUser.username, id: req.existingUser.id },
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       secret!
     )
@@ -181,7 +179,7 @@ userController.editUser = [
     }).withMessage('Please input your current password in order to use your new password.').bail()
     .custom(async (value, { req }) => {
       if (req.body.newPassword !== '') {
-        const match: boolean = await req.authenticatedUser.checkPassword(value)
+        const match: boolean = await req.authUser.checkPassword(value)
         return match ? true : await Promise.reject(new Error())
       }
     }).withMessage('Incorrect password.')
@@ -190,9 +188,9 @@ userController.editUser = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res) => {
-    req.authenticatedUser.username = req.body.username
-    if (req.body.newPassword !== '') req.authenticatedUser.password = req.body.newPassword
-    await req.authenticatedUser.save()
+    req.authUser.username = req.body.username
+    if (req.body.newPassword !== '') req.authUser.password = req.body.newPassword
+    await req.authUser.save()
     res.sendStatus(200)
   })
 ]

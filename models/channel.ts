@@ -3,8 +3,8 @@ import type { IUserDocument } from './user'
 
 export interface IChannel {
   title: string
-  admin: Types.ObjectId
-  users: Types.ObjectId[]
+  admin: IUserDocument | Types.ObjectId
+  users: IUserDocument[] | Types.ObjectId[]
 }
 
 export interface IChannelDocument extends IChannel, Document {
@@ -22,18 +22,18 @@ const ChannelSchema = new Schema<IChannelDocument>({
 })
 
 ChannelSchema.methods.isInChannel = async function (user: IUserDocument) {
-  return this.users.find((userId: Types.ObjectId) => {
-    return userId.toString() === user.id.toString()
+  return this.users.find((currUser: IUserDocument) => {
+    return currUser.id.toString() === user.id.toString()
   }) !== undefined
 }
 
 ChannelSchema.methods.isAdminOfChannel = async function (user: IUserDocument) {
-  return this.admin.toString() === user.id.toString()
+  return this.admin.id.toString() === user.id.toString()
 }
 
 ChannelSchema.methods.removeFromChannel = async function (user: IUserDocument) {
-  this.users = this.users.filter((userId: Types.ObjectId) => {
-    return userId.toString() !== user.id.toString()
+  this.users = this.users.filter((currUser: IUserDocument) => {
+    return currUser.id.toString() !== user.id.toString()
   })
   await this.save()
 }

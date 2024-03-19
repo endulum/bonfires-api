@@ -4,7 +4,7 @@ import { type IChannelDocument } from './channel'
 
 interface DisplayName { channel: Types.ObjectId, displayName: string }
 
-export interface IUser {
+interface IUser {
   username: string
   password: string
   displayNames: DisplayName[]
@@ -12,10 +12,9 @@ export interface IUser {
 
 export interface IUserDocument extends IUser, Document {
   id: Types.ObjectId
+  checkPassword: (password: string) => Promise<boolean>
   changeDisplayName: (channel: IChannelDocument, newName: string) => Promise<void>
   getDisplayName: (channel: IChannelDocument) => DisplayName | null
-  setPassword: (password: string) => Promise<void>
-  checkPassword: (password: string) => Promise<boolean>
 }
 
 interface IUserModel extends Model<IUserDocument> {
@@ -71,17 +70,6 @@ UserSchema.statics.findByNameOrId = function (nameOrId: string) {
   if (mongoose.isValidObjectId(nameOrId)) return this.findById(nameOrId)
   return this.findOne({ username: nameOrId })
 }
-
-// `findByNameOrId` SHOULD be a query helper but for whatever reason
-// adding a query helper such as the below results in compilation fail:
-
-// ts: Property 'whatever' does not exist on type '{}'
-// UserSchema.query.whatever = function (name: string) {
-//   return this.findOne({ username: name })
-// }
-
-// it took me hours to get this far until the linter went quiet
-// so i might as well accept what i have...?
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) { next(); return }
