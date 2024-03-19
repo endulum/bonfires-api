@@ -36,6 +36,21 @@ channelController.areYouChannelAdmin = asyncHandler(async (req, res, next) => {
   } else next()
 })
 
+channelController.getOwnChannels = asyncHandler(async (req, res, next) => {
+  const ownChannels = await Channel.find({
+    users: {
+      $in: [req.authUser.id]
+    }
+  })
+  res.status(200).json(ownChannels.map(channel => ({
+    id: channel.id,
+    title: channel.title,
+    admin: channel.admin,
+    userCount: channel.users.length,
+    ownDisplayName: req.authUser.getDisplayName(channel)
+  })))
+})
+
 channelController.getChannel = asyncHandler(async (req, res, next) => {
   res.status(200).json('username' in req.channel.admin && {
     title: req.channel.title,

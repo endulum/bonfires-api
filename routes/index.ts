@@ -45,6 +45,7 @@ router.route('/user/:user')
   .put(...areYouThisUser, userController.editUser)
 
 router.route('/channels')
+  .get(userController.authenticate, channelController.getOwnChannels)
   .post(userController.authenticate, channelController.createChannel)
 
 router.route('/channel/:channel')
