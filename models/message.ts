@@ -15,7 +15,7 @@ const MessageSchema = new Schema<IMessageDocument>({
   channel: { type: Schema.ObjectId, required: true },
   user: { type: Schema.ObjectId, required: true },
   timestamp: { type: Date, required: true, default: () => Date.now(), immutable: true },
-  isRemoved: { type: Boolean, default: true, required: true },
+  isRemoved: { type: Boolean, default: false, required: true },
   content: { type: String, required: true }
 })
 
