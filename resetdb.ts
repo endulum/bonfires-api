@@ -17,21 +17,22 @@ async function main (): Promise<void> {
     await User.deleteMany({})
     await Channel.deleteMany({})
     await Message.deleteMany({})
-    console.log('Deleted all content.')
+    console.log('Deleted all content.\n')
 
     const users: IUserDocument[] = []
 
-    await Promise.all([
-      'demo-user-1', 'demo-user-2', 'demo-user-3', 'demo-user-4'
-    ].map(async (username) => {
-      const user = await User.create({ username, password: 'password' })
+    for (let i = 0; i < 4; i++) {
+      const user = await User.create({
+        username: `demo-user-${i}`,
+        password: 'password'
+      })
       users.push(user)
       const token = jsonwebtoken.sign({
         username: user.username, id: user.id
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       }, secret!)
       let channelId: string = 'none'
-      if (username !== 'demo-user-4') {
+      if (i !== 0) {
         const channel = await Channel.create({
           title: 'My Own Channel',
           admin: user,
@@ -39,16 +40,16 @@ async function main (): Promise<void> {
         })
         channelId = channel.id
       }
-      console.log(`Demo user ${username} created, with token:\n${token}\n and private channel id:\n${channelId}`)
-    }))
+      console.log(`Demo user ${user.username} created, with token:\n${token}\nand private channel id:\n${channelId}\n`)
+    }
 
     if (users !== undefined) {
       const channel = await Channel.create({
         title: 'Our Cool Channel',
-        admin: users[0],
-        users: [users[0], users[1], users[2]]
+        admin: users[1],
+        users: [users[1], users[2], users[3]]
       })
-      console.log(`Group channel created with id:\n${channel.id}`)
+      console.log(`Group channel created with id:\n${channel.id}\n`)
     }
 
     console.log('Nothing left to do, closing connection.')
