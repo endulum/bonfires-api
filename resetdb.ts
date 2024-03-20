@@ -20,6 +20,7 @@ async function main (): Promise<void> {
     console.log('Deleted all content.\n')
 
     const users: IUserDocument[] = []
+    let channelId: string = ''
 
     for (let i = 0; i < 4; i++) {
       const user = await User.create({
@@ -50,6 +51,24 @@ async function main (): Promise<void> {
         users: [users[1], users[2], users[3]]
       })
       console.log(`Group channel created with id:\n${channel.id}\n`)
+      channelId = channel.id
+    }
+
+    let index = 0
+    for (const message of [
+      'Hey, you know what sucks?',
+      'vacuums',
+      'Hey, you know what sucks in a metaphorical sense?',
+      'black holes',
+      'Hey, you know what just isn\'t cool?',
+      'lava?'
+    ]) {
+      await Message.create({
+        channel: channelId,
+        user: index % 2 === 0 ? users[1].id : users[2].id,
+        content: message
+      })
+      index++
     }
 
     console.log('Nothing left to do, closing connection.')
