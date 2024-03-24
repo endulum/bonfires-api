@@ -38,7 +38,7 @@ messageController.getMessages = asyncHandler(async (req, res, next) => {
       displayName: message.user.getDisplayName(req.channel),
       isInChannel: req.channel.users.find((user) => {
         return user.id.toString() === message.user.id.toString()
-      }) !== null,
+      }) !== undefined,
       isAdmin: req.channel.admin.id.toString() === message.user.id.toString()
     },
     isRemoved: message.isRemoved

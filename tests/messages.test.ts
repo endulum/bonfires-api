@@ -34,7 +34,7 @@ beforeAll(async () => {
   groupChannel = await Channel.create({
     title: 'Our Channel',
     admin: users[0].id,
-    users: [users[0].id]
+    users: [users[0].id, users[1].id]
   })
 })
 
@@ -53,12 +53,12 @@ describe('message client ops', () => {
           { value: Array(1000).fill('A').join(''), msg: 'Messages cannot be more than 512 characters long.' }
         ],
         { content: 'Hello, World' },
-        `/channel/${groupChannel.id}/messages`, 'post', users[0].token
+        `/channel/${groupChannel.id}/messages`, 'post', users[1].token
       )
     })
 
     test('POST /channel/:channel/messages - 200 and creates message for channel', async () => {
-      const response = await reqShort(`/channel/${groupChannel.id}/messages`, 'post', users[0].token, { content: 'Hello, World' })
+      const response = await reqShort(`/channel/${groupChannel.id}/messages`, 'post', users[1].token, { content: 'Hello, World' })
       expect(response.status).toBe(200)
     })
   })
@@ -73,6 +73,16 @@ describe('message client ops', () => {
       const response = await reqShort(`/channel/${groupChannel.id}/messages`, 'get', users[0].token)
       expect(response.status).toBe(200)
       console.log(response.body)
+    })
+  })
+
+  describe('if message author leaves, message isInChannel is false', () => {
+    test('DELETE /channel/:channel deletes all affiliated messages', async () => {
+      let response = await reqShort(`/channel/${groupChannel.id}/messages`, 'get', users[0].token)
+      expect(response.body[0].user.isInChannel).toBe(true)
+      await reqShort(`/channel/${groupChannel.id}`, 'delete', users[1].token)
+      response = await reqShort(`/channel/${groupChannel.id}/messages`, 'get', users[0].token)
+      expect(response.body[0].user.isInChannel).toBe(false)
     })
   })
 
