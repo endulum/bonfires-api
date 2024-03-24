@@ -102,7 +102,7 @@ describe('basic channel ops', () => {
       })
       expect(response.status).toBe(200)
       response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
-      expect(response.body.admin.displayName).toEqual('Supreme Overlord')
+      expect(response.body.currentUser.displayName).toEqual('Supreme Overlord')
     })
 
     test('POST /channel/:channel/name - 200 and can remove channel-specific display name', async () => {
@@ -111,7 +111,7 @@ describe('basic channel ops', () => {
       })
       expect(response.status).toBe(200)
       response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
-      expect(response.body.admin.displayName).toEqual(users[0].username)
+      expect(response.body.currentUser.displayName).toBeNull()
     })
   })
 
@@ -138,7 +138,7 @@ describe('basic channel ops', () => {
       response = await reqShort(
         `/channel/${channelId}`, 'get', users[1].token
       )
-      expect(response.body.users.length).toBe(2)
+      expect(response.body.userIds.length).toBe(2)
     })
   })
 
@@ -251,7 +251,7 @@ describe('channel admin ops', () => {
       response = await reqShort(`/channel/${channelId}`, 'get', users[2].token)
       expect(response.status).toBe(403)
       response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
-      expect(response.body.users.length).toBe(2)
+      expect(response.body.userIds.length).toBe(2)
     })
   })
 
@@ -281,7 +281,7 @@ describe('channel admin ops', () => {
       })
       expect(response.status).toBe(200)
       response = await reqShort(`/channel/${channelId}`, 'get', users[0].token)
-      expect(response.body.admin.id.toString()).toEqual(users[1].id.toString())
+      expect(response.body.adminId.toString()).toEqual(users[1].id.toString())
     })
   })
 })

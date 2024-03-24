@@ -4,6 +4,7 @@ import { type ValidationChain, body } from 'express-validator'
 import { sendErrorsIfAny } from './helpers'
 import User from '../models/user'
 import Channel from '../models/channel'
+import Message from '../models/message'
 
 const channelController: Record<string, RequestHandler | Array<RequestHandler | ValidationChain>> = {}
 
@@ -53,20 +54,15 @@ channelController.getOwnChannels = asyncHandler(async (req, res, next) => {
 
 channelController.getChannel = asyncHandler(async (req, res, next) => {
   res.status(200).json('username' in req.channel.admin && {
+    id: req.channel.id,
     title: req.channel.title,
-    admin: {
-      username: req.channel.admin.username,
-      id: req.channel.admin.id,
-      displayName: req.channel.admin.getDisplayName(req.channel) ??
-          req.channel.admin.username
+    currentUser: {
+      id: req.authUser.id,
+      username: req.authUser.username,
+      displayName: req.authUser.getDisplayName(req.channel)
     },
-    users: req.channel.users.map(user =>
-      'username' in user && {
-        username: user.username,
-        id: user.id,
-        displayName: user.getDisplayName(req.channel) ?? user.username
-      }
-    )
+    adminId: req.channel.admin.id,
+    userIds: req.channel.users.map(user => 'username' in user && user.id)
   })
 })
 
@@ -141,6 +137,7 @@ channelController.leaveChannel = asyncHandler(async (req, res, next) => {
     await req.channel.removeFromChannel(req.authUser)
     if (req.channel.users.length === 0) {
       await Channel.findByIdAndDelete(req.channel.id)
+      await Message.deleteMany({ channel: req.channel.id })
     }
     res.sendStatus(200)
   }

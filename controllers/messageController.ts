@@ -30,15 +30,17 @@ messageController.getMessages = asyncHandler(async (req, res, next) => {
     .populate({ path: 'user', model: 'User' }).exec()
   res.status(200).json(messages.map(message => ('username' in message.user && {
     id: message.id,
+    timestamp: message.timestamp,
     content: message.content,
     user: {
       username: message.user.username,
       id: message.user.id,
-      displayName:
-        message.user.getDisplayName(req.channel) ??
-        message.user.username
+      displayName: message.user.getDisplayName(req.channel),
+      isInChannel: req.channel.users.find((user) => {
+        return user.id.toString() === message.user.id.toString()
+      }) !== null,
+      isAdmin: req.channel.admin.id.toString() === message.user.id.toString()
     },
-    timestamp: message.timestamp,
     isRemoved: message.isRemoved
   })))
 })

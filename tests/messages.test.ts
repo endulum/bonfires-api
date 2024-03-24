@@ -2,6 +2,7 @@ import './mongoConfigTesting'
 import { reqShort, validationLoop } from './helpers'
 import User from '../models/user'
 import Channel, { type IChannelDocument } from '../models/channel'
+import Message from '../models/message'
 
 let users: Array<{
   username: string
@@ -33,7 +34,7 @@ beforeAll(async () => {
   groupChannel = await Channel.create({
     title: 'Our Channel',
     admin: users[0].id,
-    users: [users[0].id, users[1].id, users[2].id]
+    users: [users[0].id]
   })
 })
 
@@ -72,6 +73,14 @@ describe('message client ops', () => {
       const response = await reqShort(`/channel/${groupChannel.id}/messages`, 'get', users[0].token)
       expect(response.status).toBe(200)
       console.log(response.body)
+    })
+  })
+
+  describe('if channel is deleted, its messages are gone, too', () => {
+    test('DELETE /channel/:channel deletes all affiliated messages', async () => {
+      await reqShort(`/channel/${groupChannel.id}`, 'delete', users[0].token)
+      const messages = await Message.find({})
+      expect(messages.length).toBe(0)
     })
   })
 })
