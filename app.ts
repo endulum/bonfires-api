@@ -20,6 +20,7 @@ const server = createServer(app)
 const io = new Server(server, {
   cors: { origin: '*' }
 })
+app.locals.io = io
 const port: string | undefined = process.env.PORT
 const uri: string | undefined = process.env.CONNECTION
 const secret: string | undefined = process.env.SECRET
@@ -40,6 +41,11 @@ app.use(express.urlencoded({ extended: false }))
 
 // toggle this on and off to simulate latency when needed
 // app.use((req, res, next) => setTimeout(next, 750))
+
+app.use(function (req, res, next) {
+  req.io = io
+  next()
+})
 
 app.use(router)
 
@@ -62,10 +68,7 @@ app.use((
 })
 
 io.on('connection', async (socket) => {
-  socket.on('new message', async (msg) => {
-    console.log(`new message detected on backend: ${msg}`)
-    io.emit('new message', msg)
-  })
+  //
 })
 
 if (port !== undefined) {

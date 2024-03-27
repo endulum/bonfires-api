@@ -2,7 +2,7 @@ import mongoose, { Schema, Types, type Document, type Model, type CallbackError 
 import bcrypt from 'bcryptjs'
 import { type IChannelDocument } from './channel'
 
-interface DisplayName { channel: Types.ObjectId, displayName: string }
+export interface DisplayName { channel: Types.ObjectId, displayName: string }
 
 interface IUser {
   username: string
@@ -14,7 +14,7 @@ export interface IUserDocument extends IUser, Document {
   id: Types.ObjectId
   checkPassword: (password: string) => Promise<boolean>
   changeDisplayName: (channel: IChannelDocument, newName: string) => Promise<void>
-  getDisplayName: (channel: IChannelDocument) => DisplayName | null
+  getDisplayName: (channel: IChannelDocument) => string | null
 }
 
 interface IUserModel extends Model<IUserDocument> {
