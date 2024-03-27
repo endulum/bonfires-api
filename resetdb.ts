@@ -20,7 +20,8 @@ async function main (): Promise<void> {
     console.log('Deleted all content.\n')
 
     const users: IUserDocument[] = []
-    let channelId: string = ''
+    let groupChannelId: string = ''
+    let markdownDemoId: string = ''
 
     for (let i = 0; i < 4; i++) {
       const user = await User.create({
@@ -35,11 +36,12 @@ async function main (): Promise<void> {
       let channelId: string = 'none'
       if (i !== 0) {
         const channel = await Channel.create({
-          title: 'My Own Channel',
+          title: i === 1 ? 'Markdown Demo' : 'My Own Channel',
           admin: user,
           users: [user]
         })
         channelId = channel.id
+        if (i === 1) markdownDemoId = channel.id
       }
       console.log(`Demo user ${user.username} created, with token:\n${token}\nand private channel id:\n${channelId}\n`)
     }
@@ -51,7 +53,7 @@ async function main (): Promise<void> {
         users: [users[1], users[2], users[3]]
       })
       console.log(`Group channel created with id:\n${channel.id}\n`)
-      channelId = channel.id
+      groupChannelId = channel.id
     }
 
     let index = 0
@@ -64,8 +66,34 @@ async function main (): Promise<void> {
       'lava?'
     ]) {
       await Message.create({
-        channel: channelId,
+        channel: groupChannelId,
         user: index % 2 === 0 ? users[1].id : users[2].id,
+        content: message
+      })
+      index++
+    }
+
+    await Message.create({
+      channel: groupChannelId,
+      user: users[0].id,
+      content: 'I was in this channel, but not anymore.'
+    })
+
+    await Message.create({
+      channel: groupChannelId,
+      user: users[1].id,
+      content: 'This is a long paragraph. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed luctus sapien. Donec lobortis nisl quam, id bibendum magna consequat ac. Vivamus pharetra elit eget molestie maximus. Vestibulum rutrum venenatis arcu, a venenatis purus ullamcorper id. Etiam eu est eget tellus maximus vestibulum. Mauris at placerat enim. Mauris nec gravida nulla, eget fringilla risus. Nunc tempus, arcu et pellentesque consequat, quam magna egestas arcu, in egestas nisl leo nec elit.'
+    })
+
+    index = 0
+    for (const message of [
+      '**Bold**, *Italic*, ~~Strikethrough~~, [Hyperlink](https://commonmark.org/)',
+      '- Bullet one\n- Bullet two\n- Bullet three',
+      '![Image](https://commonmark.org/help/images/favicon.png)'
+    ]) {
+      await Message.create({
+        channel: markdownDemoId,
+        user: users[1].id,
         content: message
       })
       index++
