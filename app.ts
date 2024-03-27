@@ -10,10 +10,16 @@ import mongoose from 'mongoose'
 import morgan from 'morgan'
 import cors from 'cors'
 import 'dotenv/config'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
 
 import router from './routes'
 
 const app: Express = express()
+const server = createServer(app)
+const io = new Server(server, {
+  cors: { origin: '*' }
+})
 const port: string | undefined = process.env.PORT
 const uri: string | undefined = process.env.CONNECTION
 const secret: string | undefined = process.env.SECRET
@@ -55,8 +61,15 @@ app.use((
   }
 })
 
+io.on('connection', async (socket) => {
+  socket.on('new message', async (msg) => {
+    console.log(`new message detected on backend: ${msg}`)
+    io.emit('new message', msg)
+  })
+})
+
 if (port !== undefined) {
-  app.listen(port, () => {
-    console.log(`⚡️ server is running at http://localhost:${port}`)
+  server.listen(port, () => {
+    console.log(`⚡️ server starting at http://localhost:${port}`)
   })
 } else throw new Error('Port is not defined.')

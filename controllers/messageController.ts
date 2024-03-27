@@ -26,7 +26,7 @@ messageController.newMessage = [
 ]
 
 messageController.getMessages = asyncHandler(async (req, res, next) => {
-  const messages = await Message.find({ channel: req.channel })
+  const messages = await Message.find({ channel: req.channel.id })
     .populate({ path: 'user', model: 'User' }).exec()
   res.status(200).json(messages.map(message => ('username' in message.user && {
     id: message.id,
