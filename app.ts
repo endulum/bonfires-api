@@ -75,6 +75,18 @@ io.on('connection', async (socket) => {
   socket.on('leaving channel', async (channelId: string) => {
     await socket.leave(channelId)
   })
+
+  socket.on('you started typing', async (
+    channelId: string, userId: string, userName: string
+  ) => {
+    socket.to(channelId).emit('someone started typing', userId, userName)
+  })
+
+  socket.on('you stopped typing', async (
+    channelId: string, userId: string
+  ) => {
+    socket.to(channelId).emit('someone stopped typing', userId)
+  })
 })
 
 if (port !== undefined) {
