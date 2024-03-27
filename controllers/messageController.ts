@@ -53,7 +53,9 @@ messageController.newMessage = [
       content: req.body.content
     })
     message = await message.populate({ path: 'user', model: 'User' })
-    req.io.emit('new message created', messageInfo(message, req.channel))
+    req.io
+      .to(req.channel.id.toString() as string)
+      .emit('new message created', messageInfo(message, req.channel))
     res.sendStatus(200)
   })
 ]

@@ -68,7 +68,13 @@ app.use((
 })
 
 io.on('connection', async (socket) => {
-  //
+  socket.on('viewing channel', async (channelId: string) => {
+    await socket.join(channelId)
+  })
+
+  socket.on('leaving channel', async (channelId: string) => {
+    await socket.leave(channelId)
+  })
 })
 
 if (port !== undefined) {
