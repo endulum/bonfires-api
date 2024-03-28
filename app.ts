@@ -20,7 +20,6 @@ const server = createServer(app)
 const io = new Server(server, {
   cors: { origin: '*' }
 })
-app.locals.io = io
 const port: string | undefined = process.env.PORT
 const uri: string | undefined = process.env.CONNECTION
 const secret: string | undefined = process.env.SECRET
