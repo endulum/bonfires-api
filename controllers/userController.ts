@@ -2,10 +2,11 @@ import { type RequestHandler } from 'express'
 import jsonwebtoken from 'jsonwebtoken'
 import asyncHandler from 'express-async-handler'
 import { type ValidationChain, body } from 'express-validator'
-import { sendErrorsIfAny } from './helpers'
+import { sendErrorsIfAny, welcomeChannelMessages } from './helpers'
 import 'dotenv/config'
 import User from '../models/user'
 import Channel from '../models/channel'
+import Message from '../models/message'
 
 interface IJwtPayload extends jsonwebtoken.JwtPayload {
   id: string
@@ -111,10 +112,29 @@ userController.signUp = [
   sendErrorsIfAny,
 
   asyncHandler(async (req, res) => {
-    await User.create({
+    const newUser = await User.create({
       username: req.body.username,
       password: req.body.password
     })
+
+    const mentor = await User.findOne({ username: 'bonfire-tips' })
+    if (mentor !== null) {
+      const welcomeChannel = await Channel.create({
+        title: 'Welcome to Bonfires',
+        admin: newUser,
+        users: [newUser, mentor]
+      })
+
+      await mentor.changeDisplayName(welcomeChannel, 'Camp Tips')
+
+      for (let i = 0; i < welcomeChannelMessages.length; i++) {
+        await Message.create({
+          channel: welcomeChannel,
+          user: mentor,
+          content: welcomeChannelMessages[i]
+        })
+      }
+    }
     res.sendStatus(200)
   })
 ]

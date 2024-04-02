@@ -46,7 +46,7 @@ channelController.getOwnChannels = asyncHandler(async (req, res, next) => {
   res.status(200).json(ownChannels.map(channel => ({
     id: channel.id,
     title: channel.title,
-    admin: channel.admin,
+    adminId: channel.admin,
     userCount: channel.users.length,
     ownDisplayName: req.authUser.getDisplayName(channel)
   })))
