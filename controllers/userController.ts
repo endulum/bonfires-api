@@ -77,7 +77,7 @@ const usernameValidation = body('username')
   .trim()
   .isLength({ min: 1 }).withMessage('Please enter a username.').bail()
   .isLength({ min: 2, max: 32 }).withMessage('Username must be between 2 and 32 characters long.').bail()
-  .matches(/^[a-z0-9-]+$/g).withMessage('Username must only consist of letters, numbers, and hyphens.').bail()
+  .matches(/^[a-z0-9-]+$/g).withMessage('Username must only consist of lowercase letters, numbers, and hyphens.').bail()
   .custom(async (value: string, { req }) => {
     const existingUser = await User.findByNameOrId(value)
     if (existingUser !== null) {

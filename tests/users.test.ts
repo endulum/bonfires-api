@@ -8,7 +8,7 @@ describe('user client ops', () => {
   const usernameErrors = [
     { value: '', msg: 'Please enter a username.' },
     { value: 'a', msg: 'Username must be between 2 and 32 characters long.' },
-    { value: '&&&&', msg: 'Username must only consist of letters, numbers, and hyphens.' },
+    { value: '&&&&', msg: 'Username must only consist of lowercase letters, numbers, and hyphens.' },
     { value: 'demo-user-1', msg: 'A user already exists with this username.' }
   ]
 
