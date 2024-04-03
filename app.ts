@@ -12,8 +12,12 @@ import cors from 'cors'
 import 'dotenv/config'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
+import compression from 'compression'
 
 import router from './routes'
+import helmet from 'helmet'
+
+// todo: origin '*' is inherently unsafe. research and implement a safer method
 
 const app: Express = express()
 const server = createServer(app)
@@ -33,7 +37,11 @@ if (uri !== undefined) {
   db.on('error', console.error.bind(console, 'mongo connection error'))
 } else throw new Error('Mongoose URI is not defined.')
 
-app.use(cors())
+app.use(compression())
+app.use(helmet())
+app.use(cors({
+  origin: '*'
+}))
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
