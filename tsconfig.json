@@ -24,6 +24,6 @@
     "strictNullChecks": true,
     "alwaysStrict": true,
     "skipLibCheck": true,
-    "lib": ["ESNext"],
-  },
+    "lib": ["ESNext"]
+  }
 }
