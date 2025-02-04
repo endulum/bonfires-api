@@ -1,4 +1,7 @@
-import { UserDocument } from "../mongoose/interfaces/mongoose.gen";
+import {
+  ChannelDocument,
+  UserDocument,
+} from "../mongoose/interfaces/mongoose.gen";
 import { PopulatedDocument } from "../mongoose/interfaces/mongoose.gen";
 
 declare global {
@@ -7,6 +10,10 @@ declare global {
       formErrors?: Record<string, string>;
       user: PopulatedDocument<UserDocument, "settings">;
       thisUser: PopulatedDocument<UserDocument, "settings">;
+      thisChannel: PopulatedDocument<
+        PopulatedDocument<ChannelDocument, "admin">,
+        "users"
+      >;
     }
   }
 }

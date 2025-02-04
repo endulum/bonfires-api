@@ -52,7 +52,9 @@ export type ChannelQuery = mongoose.Query<
  *
  * This type represents `ChannelSchema.query`. For most use cases, you should not need to use this type explicitly.
  */
-export type ChannelQueries = {};
+export type ChannelQueries = {
+  byId: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
+};
 
 export type ChannelMethods = {
   isInChannel: (this: ChannelDocument, ...args: any[]) => any;

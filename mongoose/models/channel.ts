@@ -6,6 +6,7 @@ import {
   ChannelModel,
   ChannelSchema,
 } from "../interfaces/mongoose.gen";
+// import { ChannelSettings } from "./channelSettings";
 import { Message } from "./message";
 
 const channelSchema: ChannelSchema = new Schema({
@@ -13,6 +14,12 @@ const channelSchema: ChannelSchema = new Schema({
   admin: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
 });
+
+// this is to avoid 500's if the :channel param isn't an id
+channelSchema.query.byId = function (id: string) {
+  if (mongoose.isValidObjectId(id)) return this.where({ _id: id });
+  return this.where({ _id: undefined });
+};
 
 channelSchema.method("isInChannel", async function (user: UserDocument) {
   return (
@@ -34,14 +41,23 @@ channelSchema.method("updateAdmin", async function (user: UserDocument) {
   await this.save();
 });
 
-channelSchema.method("kick", async function (user: UserDocument) {
-  this.users.pull(user);
+channelSchema.method("kick", async function (users: UserDocument[]) {
+  this.users.pull(...users);
   await this.save();
 });
 
-channelSchema.method("invite", async function (user: UserDocument) {
-  this.users.push(user);
+channelSchema.method("invite", async function (users: UserDocument[]) {
+  this.users.push(...users);
   await this.save();
+  // await Promise.all(
+  //   users.map(async (user: UserDocument) => {
+  //     const settings = await ChannelSettings.create({
+  //       user,
+  //       channel: this,
+  //     });
+  //     await settings.save();
+  //   })
+  // );
 });
 
 channelSchema.pre("findOneAndDelete", async function (next) {
