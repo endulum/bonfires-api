@@ -1,5 +1,5 @@
 import "../memoryServer";
-import { req, assertCode, assertInputErrors, token } from "../helpers";
+import { req, assertCode, assertInputErrors, token, logBody } from "../helpers";
 import { seed } from "../../mongoose/dev";
 import { User } from "../../mongoose/models/user";
 import { UserDocument } from "../../mongoose/interfaces/mongoose.gen";
@@ -24,6 +24,7 @@ describe("GET /me", () => {
     assertCode(response, 200);
     expect(response.body.username).toBe("admin");
     expect(response.body).not.toHaveProperty("password");
+    logBody(response);
   });
 });
 
@@ -34,6 +35,8 @@ describe("PUT /me", () => {
     password: "new-password",
     confirmPassword: "new-password",
     currentPassword: "password",
+    defaultNameColor: "#000000",
+    defaultInvisible: "false",
   };
 
   test("400 and errors", async () => {
@@ -52,15 +55,18 @@ describe("PUT /me", () => {
         { password: "some mismatched password" },
         { confirmPassword: "some mismatched password" },
         { currentPassword: "some mismatched password" },
+        { defaultNameColor: "" },
+        { defaultNameColor: "owo" },
+        { defaultInvisible: "" },
+        { defaultInvisible: "owo" },
       ],
     });
   });
 
   test("200 and edits own user details (without password)", async () => {
-    const response = await req("PUT /me", adminToken, {
-      username: correctInputs.username,
-      status: correctInputs.status,
-    });
+    const { password, confirmPassword, currentPassword, ...rest } =
+      correctInputs;
+    const response = await req("PUT /me", adminToken, rest);
     assertCode(response, 200);
   });
 
@@ -86,6 +92,7 @@ describe("GET /user/:user", () => {
     const response = await req(`GET /user/${admin!.id}`);
     assertCode(response, 200);
     expect(response.body).not.toHaveProperty("password");
+    logBody(response);
   });
 
   test("200 and user details (using username)", async () => {

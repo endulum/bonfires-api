@@ -330,6 +330,7 @@ export type User = {
   status?: string;
   ghUser?: string;
   ghId?: number;
+  settings: UserSettings["_id"] | UserSettings;
   _id: mongoose.Types.ObjectId;
 };
 
@@ -414,6 +415,7 @@ export type UserDocument = mongoose.Document<
     status?: string;
     ghUser?: string;
     ghId?: number;
+    settings: UserSettingsDocument["_id"] | UserSettingsDocument;
     _id: mongoose.Types.ObjectId;
   };
 
@@ -426,8 +428,7 @@ export type UserDocument = mongoose.Document<
  * ```
  */
 export type UserSettings = {
-  user: mongoose.Types.ObjectId;
-  defaultNameColor?: string;
+  defaultNameColor: string;
   defaultInvisible: boolean;
   _id: mongoose.Types.ObjectId;
 };
@@ -464,10 +465,7 @@ export type UserSettingsQuery = mongoose.Query<
  */
 export type UserSettingsQueries = {};
 
-export type UserSettingsMethods = {
-  changeNameColor: (this: UserSettingsDocument, ...args: any[]) => any;
-  toggleInvisible: (this: UserSettingsDocument, ...args: any[]) => any;
-};
+export type UserSettingsMethods = {};
 
 export type UserSettingsStatics = {};
 
@@ -513,8 +511,7 @@ export type UserSettingsDocument = mongoose.Document<
   UserSettingsQueries
 > &
   UserSettingsMethods & {
-    user: mongoose.Types.ObjectId;
-    defaultNameColor?: string;
+    defaultNameColor: string;
     defaultInvisible: boolean;
     _id: mongoose.Types.ObjectId;
   };

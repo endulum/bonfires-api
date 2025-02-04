@@ -17,7 +17,10 @@ export const deserialize = asyncHandler(async (req, _res, next) => {
     const { id } = jwt.verify(bearerToken, process.env.JWT_SECRET) as {
       id: Types.ObjectId;
     };
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("-__v").populate({
+      path: "settings",
+      select: "-_id -__v",
+    });
     if (user) req.user = user;
   } catch (err) {
     console.error(err);
@@ -80,6 +83,11 @@ export const edit = [
       }
     })
     .escape(),
+  body("defaultInvisible").trim().isBoolean(),
+  body("defaultNameColor")
+    .trim()
+    .matches(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i)
+    .withMessage("Name color must be a valid hex code."),
   validate,
   asyncHandler(async (req, res) => {
     await req.user.updateDetails(req.body);
@@ -88,7 +96,13 @@ export const edit = [
 ];
 
 export const exists = asyncHandler(async (req, res, next) => {
-  const user = await User.findOne().byNameOrId(req.params.user);
+  const user = await User.findOne()
+    .byNameOrId(req.params.user)
+    .select("-__v")
+    .populate({
+      path: "settings",
+      select: "-_id -__v",
+    });
   if (user) {
     req.thisUser = user;
     next();
