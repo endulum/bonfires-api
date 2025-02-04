@@ -364,9 +364,7 @@ export type UserQueries = {
 };
 
 export type UserMethods = {
-  updateUsername: (this: UserDocument, ...args: any[]) => any;
-  updateStatus: (this: UserDocument, ...args: any[]) => any;
-  updateGitHubUser: (this: UserDocument, ...args: any[]) => any;
+  updateDetails: (this: UserDocument, ...args: any[]) => any;
   comparePassword: (this: UserDocument, ...args: any[]) => any;
 };
 

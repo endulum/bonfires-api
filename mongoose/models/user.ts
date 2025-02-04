@@ -23,32 +23,31 @@ const userSchema: UserSchema = new Schema({
 });
 
 userSchema.query.byNameOrId = function (nameOrId: string): UserQuery {
-  if (mongoose.isValidObjectId(nameOrId)) return this.where({ id: nameOrId });
+  if (mongoose.isValidObjectId(nameOrId)) return this.where({ _id: nameOrId });
   return this.where({ username: nameOrId });
 };
 
-userSchema.method("updateUsername", async function (username: string) {
-  this.username = username;
-  await this.save();
-});
-
-userSchema.method("updateStatus", async function (bio: string) {
-  this.status = bio;
-  await this.save();
-});
-
-userSchema.method("updateGitHubUser", async function (ghUser: string) {
-  this.ghUser = ghUser;
-  await this.save();
-});
+userSchema.method(
+  "updateDetails",
+  async function (body: Record<string, string>) {
+    if (body.username !== "") this.username = body.username;
+    this.status = body.status;
+    if (body.password !== "") this.password = body.password;
+    await this.save();
+  }
+);
 
 userSchema.method("comparePassword", async function (password: string) {
-  return this.password ? bcrypt.compare(password, this.password) : false;
+  const user: UserDocument & { password?: string } = await this.model("User")
+    .findById(this.id)
+    .select("+password");
+  if (!user || !user.password) return false;
+  return bcrypt.compare(password, user.password as string);
 });
 
 userSchema.pre("save", async function (next) {
   // hash incoming new password
-  if (this.password && !this.isModified("password")) {
+  if (this.password && this.isModified("password")) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }

@@ -4,8 +4,12 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "envinit": "cp -n .env.example .env.production && cp -n .env.example .env.development && cp -n .env.example .env.test",
+    "envinit:overwrite": "cp .env.example .env.production && cp .env.example .env.development && cp .env.example .env.test",
     "play": "npx nodemon _playground.ts",
-    "mtgen": "npx mtgen ./mongoose/models/ -o ./mongoose/interfaces/"
+    "mtgen": "npx mtgen ./mongoose/models/ -o ./mongoose/interfaces/",
+    "dev": "NODE_ENV=development nodemon --exec ts-node ./app.ts",
+    "test": "NODE_ENV=test jest --runInBand --watch"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +29,7 @@
     "mongodb-memory-server": "^9.1.6",
     "mongoose": "^8.2.0",
     "morgan": "^1.10.0",
+    "ofetch": "^1.4.1",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
