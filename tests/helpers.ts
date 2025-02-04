@@ -41,7 +41,8 @@ export async function req(
     case "DELETE":
       return request(app)
         .delete(url)
-        .set({ Authorization: token !== null ? `Bearer ${token}` : "" });
+        .set({ Authorization: token !== null ? `Bearer ${token}` : "" })
+        .send(form ?? {});
     default:
       return request(app)
         .get(url)

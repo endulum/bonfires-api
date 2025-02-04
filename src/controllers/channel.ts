@@ -31,10 +31,10 @@ export const exists = asyncHandler(async (req, res, next) => {
   const channel = await Channel.findOne()
     .byId(req.params.channel)
     .populate([
-      { path: "admin", select: "id username status" },
+      { path: "admin", select: "id username" },
       // todo: let "status" still be present and defined, just as an empty string.
       // same for default color.
-      { path: "users", select: "id username status" },
+      { path: "users", select: "id username" },
     ]);
   if (!channel) res.status(404).send("Channel could not be found.");
   else {
@@ -47,5 +47,33 @@ export const get = [
   exists,
   asyncHandler(async (req, res) => {
     res.json(req.thisChannel);
+  }),
+];
+
+export const edit = [
+  exists,
+  ...validation,
+  validate,
+  asyncHandler(async (req, res) => {
+    await req.thisChannel.updateTitle(req.body.title);
+    res.sendStatus(200);
+  }),
+];
+
+export const del = [
+  exists,
+  body("title")
+    .trim()
+    .notEmpty()
+    .withMessage("Please input the channel title.")
+    .bail()
+    .custom(async (value, { req }) => {
+      if (value !== req.thisChannel.title) throw new Error("Incorrect title.");
+      return true;
+    }),
+  validate,
+  asyncHandler(async (req, res) => {
+    await req.thisChannel.deleteOne();
+    res.sendStatus(200);
   }),
 ];

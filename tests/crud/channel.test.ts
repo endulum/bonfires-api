@@ -51,5 +51,54 @@ describe("GET /channel/:channel", () => {
     const response = await req(`GET /channel/${channelId}`);
     assertCode(response, 200);
     logBody(response);
+    expect(response.body.users.length).toBe(3);
+  });
+});
+
+describe("PUT /channel/:channel", () => {
+  test("400 and errors", async () => {
+    await assertInputErrors({
+      reqArgs: [`PUT /channel/${channelId}`, adminToken],
+      correctInputs: { title: "New Channel Title" },
+      wrongInputs: [
+        { title: "" },
+        { title: "a" },
+        { title: Array(1000).fill("A").join("") },
+      ],
+    });
+  });
+
+  test("200 and edits channel detail", async () => {
+    let response = await req(`PUT /channel/${channelId}`, adminToken, {
+      title: "New Channel Title",
+    });
+    assertCode(response, 200);
+
+    response = await req(`GET /channel/${channelId}`, adminToken);
+    expect(response.body.title).toBe("New Channel Title");
+  });
+});
+
+describe("DELETE /channel/:channel", () => {
+  test("400 and errors", async () => {
+    await assertInputErrors({
+      reqArgs: [`DELETE /channel/${channelId}`, adminToken],
+      correctInputs: { title: "New Channel Title" },
+      wrongInputs: [
+        { title: "" },
+        { title: "a" },
+        { title: Array(1000).fill("A").join("") },
+      ],
+    });
+  });
+
+  test("200 and deletes channel", async () => {
+    let response = await req(`DELETE /channel/${channelId}`, adminToken, {
+      title: "New Channel Title",
+    });
+    assertCode(response, 200);
+
+    response = await req(`GET /channel/${channelId}`, adminToken);
+    assertCode(response, 404);
   });
 });

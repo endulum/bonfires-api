@@ -17,6 +17,10 @@ router.route("/user/:user").get(user.get);
 
 // channel
 router.route("/channels").post(user.authenticate, channel.create);
-router.route("/channel/:channel").get(channel.get);
+router
+  .route("/channel/:channel")
+  .get(channel.get)
+  .put(channel.edit)
+  .delete(channel.del);
 
 export { router };

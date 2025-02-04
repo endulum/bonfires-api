@@ -24,7 +24,6 @@ describe("GET /me", () => {
     assertCode(response, 200);
     expect(response.body.username).toBe("admin");
     expect(response.body).not.toHaveProperty("password");
-    logBody(response);
   });
 });
 
