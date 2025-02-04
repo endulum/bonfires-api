@@ -8,6 +8,7 @@ import {
 } from "../interfaces/mongoose.gen";
 // import { ChannelSettings } from "./channelSettings";
 import { Message } from "./message";
+import { UserSettings } from "./userSettings";
 
 const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
@@ -49,19 +50,11 @@ channelSchema.method("kick", async function (users: UserDocument[]) {
 channelSchema.method("invite", async function (users: UserDocument[]) {
   this.users.push(...users);
   await this.save();
-  // await Promise.all(
-  //   users.map(async (user: UserDocument) => {
-  //     const settings = await ChannelSettings.create({
-  //       user,
-  //       channel: this,
-  //     });
-  //     await settings.save();
-  //   })
-  // );
 });
 
 channelSchema.pre("findOneAndDelete", async function (next) {
   await Message.deleteMany({ channel: this });
+  await UserSettings.deleteMany({ channel: this });
   return next();
 });
 
