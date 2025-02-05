@@ -45,22 +45,31 @@ export const exists = asyncHandler(async (req, res, next) => {
 });
 
 export const isInChannel = [
+  user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
     if (req.thisChannel.isInChannel(req.user)) return next();
-    else res.sendStatus(403);
+    else res.status(403).send("You are not in this channel.");
+  }),
+];
+
+export const isAdminOfChannel = [
+  ...isInChannel,
+  asyncHandler(async (req, res, next) => {
+    if (req.thisChannel.isAdmin(req.user)) return next();
+    else res.status(403).send("You are not the admin of this channel.");
   }),
 ];
 
 export const get = [
-  exists,
+  ...isInChannel,
   asyncHandler(async (req, res) => {
     res.json(req.thisChannel);
   }),
 ];
 
 export const edit = [
-  exists,
+  ...isAdminOfChannel,
   ...validation,
   validate,
   asyncHandler(async (req, res) => {
@@ -70,7 +79,7 @@ export const edit = [
 ];
 
 export const del = [
-  exists,
+  ...isAdminOfChannel,
   body("title")
     .trim()
     .notEmpty()
@@ -123,7 +132,6 @@ export const leave = [
 ];
 
 export const invite = [
-  ...user.authenticate,
   ...isInChannel,
   user.exists,
   asyncHandler(async (req, res) => {
@@ -137,8 +145,7 @@ export const invite = [
 ];
 
 export const kick = [
-  ...user.authenticate,
-  ...isInChannel,
+  ...isAdminOfChannel,
   user.exists,
   asyncHandler(async (req, res) => {
     if (!req.thisChannel.isInChannel(req.thisUser))
@@ -151,8 +158,7 @@ export const kick = [
 ];
 
 export const promote = [
-  ...user.authenticate,
-  ...isInChannel,
+  ...isAdminOfChannel,
   user.exists,
   asyncHandler(async (req, res) => {
     if (req.thisChannel.isAdmin(req.thisUser))
