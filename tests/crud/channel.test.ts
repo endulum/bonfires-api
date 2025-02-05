@@ -43,15 +43,15 @@ describe("GET /channel/:channel", () => {
   });
 
   test("404 if not found", async () => {
-    const response = await req("GET /channel/owo");
+    const response = await req("GET /channel/owo", adminToken);
     assertCode(response, 404);
   });
 
   test("200 and channel details", async () => {
-    const response = await req(`GET /channel/${channelId}`);
+    const response = await req(`GET /channel/${channelId}`, adminToken);
     assertCode(response, 200);
     logBody(response);
-    expect(response.body.users.length).toBe(3);
+    expect(response.body.users.length).toBe(4);
   });
 });
 

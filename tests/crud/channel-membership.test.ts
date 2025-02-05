@@ -86,7 +86,7 @@ describe("POST /channel/:channel/leave", () => {
       await token(user.username)
     );
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`);
+    response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.users.length).toBe(1);
   });
 
@@ -101,7 +101,7 @@ describe("POST /channel/:channel/leave", () => {
   test("200 and deletes channel if you were the last member", async () => {
     let response = await req(`POST /channel/${channel._id}/leave`, adminToken);
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`);
+    response = await req(`GET /channel/${channel._id}`, adminToken);
     assertCode(response, 404);
   });
 });
@@ -135,7 +135,7 @@ describe("POST /channel/:channel/invite/:user", () => {
       adminToken
     );
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`);
+    response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.users.length).toBe(3);
   });
 });
@@ -169,7 +169,7 @@ describe("POST /channel/:channel/kick/:user", () => {
       adminToken
     );
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`);
+    response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.users.length).toBe(1);
   });
 });
@@ -211,7 +211,7 @@ describe("POST /channel/:channel/promote/:user", () => {
       adminToken
     );
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`);
+    response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.admin._id).toBe(users[0].id);
   });
 });
