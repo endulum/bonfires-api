@@ -7,7 +7,7 @@ import { ChannelSettings } from "./models/channelSettings";
 import { Message } from "./models/message";
 
 import * as fakes from "./fakes";
-import { UserDocument } from "./interfaces/mongoose.gen";
+import { ChannelDocument, UserDocument } from "./interfaces/mongoose.gen";
 
 export async function wipe() {
   await Promise.all(
@@ -38,4 +38,30 @@ export async function createBulkUsers(count: number) {
     })
   );
   return users;
+}
+
+export async function createBulkChannels(
+  count: number,
+  admins: UserDocument[]
+) {
+  const channelData = fakes.bulkChannels(count);
+  const channels: ChannelDocument[] = [];
+  await Promise.all(
+    channelData.map(async (cd) => {
+      const channel = await Channel.create({
+        admin: admins[Math.floor(Math.random() * admins.length)],
+        title: cd.title,
+      });
+      channels.push(channel);
+    })
+  );
+  return channels;
+}
+
+export async function addUsersToChannels(
+  users: { _id: string }[],
+  channel: ChannelDocument
+) {
+  await channel.users.push(...users);
+  await channel.save();
 }

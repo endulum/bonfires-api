@@ -5,6 +5,10 @@ export type BulkUserData = {
   status: string;
 };
 
+export type BulkChannelData = {
+  title: string;
+};
+
 export function randDate() {
   return faker.date.recent({ days: 7 });
 }
@@ -31,4 +35,14 @@ export function bulkUsers(count: number): BulkUserData[] {
   }));
 
   return users;
+}
+
+export function bulkChannels(count: number): BulkChannelData[] {
+  const channels: BulkChannelData[] = [];
+  while (channels.length < count) {
+    const title = faker.company.name();
+    if (title.length > 64) continue;
+    channels.push({ title });
+  }
+  return channels;
 }
