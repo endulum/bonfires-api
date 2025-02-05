@@ -3,6 +3,7 @@ import { body } from "express-validator";
 
 import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
+import * as user from "./user";
 
 export const validation = [
   body("title")
@@ -43,6 +44,14 @@ export const exists = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const isInChannel = [
+  exists,
+  asyncHandler(async (req, res, next) => {
+    if (req.thisChannel.isInChannel(req.user)) return next();
+    else res.sendStatus(403);
+  }),
+];
+
 export const get = [
   exists,
   asyncHandler(async (req, res) => {
@@ -75,5 +84,84 @@ export const del = [
   asyncHandler(async (req, res) => {
     await req.thisChannel.deleteOne();
     res.sendStatus(200);
+  }),
+];
+
+export const getMutual = [
+  ...user.authenticate,
+  user.exists,
+  asyncHandler(async (req, res) => {
+    const channels = await Channel.find({
+      users: {
+        $all: [req.user.id, req.thisUser.id],
+      },
+    }).select(["id", "title"]);
+    res.json(channels);
+  }),
+];
+
+export const leave = [
+  ...user.authenticate,
+  ...isInChannel,
+  asyncHandler(async (req, res) => {
+    if (req.user._id.toString() === req.thisChannel.admin._id.toString()) {
+      if (req.thisChannel.users.length > 1) {
+        res
+          .status(403)
+          .send(
+            "You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving."
+          );
+      } else {
+        await Channel.deleteOne({ _id: req.thisChannel._id });
+        res.sendStatus(200);
+      }
+    } else {
+      await req.thisChannel.kick([req.user]);
+      res.sendStatus(200);
+    }
+  }),
+];
+
+export const invite = [
+  ...user.authenticate,
+  ...isInChannel,
+  user.exists,
+  asyncHandler(async (req, res) => {
+    if (req.thisChannel.isInChannel(req.thisUser))
+      res.status(400).send("This user is already in this channel.");
+    else {
+      await req.thisChannel.invite([req.thisUser]);
+      res.sendStatus(200);
+    }
+  }),
+];
+
+export const kick = [
+  ...user.authenticate,
+  ...isInChannel,
+  user.exists,
+  asyncHandler(async (req, res) => {
+    if (!req.thisChannel.isInChannel(req.thisUser))
+      res.status(400).send("This user is not in this channel.");
+    else {
+      await req.thisChannel.kick([req.thisUser]);
+      res.sendStatus(200);
+    }
+  }),
+];
+
+export const promote = [
+  ...user.authenticate,
+  ...isInChannel,
+  user.exists,
+  asyncHandler(async (req, res) => {
+    if (req.thisChannel.isAdmin(req.thisUser))
+      res.status(400).send("You cannot promote yourself.");
+    else if (!req.thisChannel.isInChannel(req.thisUser))
+      res.status(400).send("This user is not in this channel.");
+    else {
+      await req.thisChannel.updateAdmin(req.thisUser);
+      res.sendStatus(200);
+    }
   }),
 ];

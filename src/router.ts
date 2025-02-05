@@ -14,6 +14,10 @@ router.route("/github").get(auth.github);
 // user
 router.route("/me").get(user.me).put(user.edit);
 router.route("/user/:user").get(user.get);
+router.route("/user/:user/mutual").get(channel.getMutual);
+
+// todo: stick `user.authenticate` wherever you can in controllers.
+// Bonfires can be a walled garden in terms of info exposition.
 
 // channel
 router.route("/channels").post(user.authenticate, channel.create);
@@ -22,5 +26,9 @@ router
   .get(channel.get)
   .put(channel.edit)
   .delete(channel.del);
+router.route("/channel/:channel/leave").post(channel.leave);
+router.route("/channel/:channel/invite/:user").post(channel.invite);
+router.route("/channel/:channel/kick/:user").post(channel.kick);
+router.route("/channel/:channel/promote/:user").post(channel.promote);
 
 export { router };
