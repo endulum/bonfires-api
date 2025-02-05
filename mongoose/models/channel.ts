@@ -21,13 +21,14 @@ channelSchema.query.byId = function (id: string) {
   return this.where({ _id: undefined });
 };
 
-channelSchema.method("isInChannel", async function (user: UserDocument) {
+channelSchema.method("isInChannel", function (user: UserDocument) {
   return (
-    this.users.find((u) => u.id.toString() !== user.id.toString()) !== undefined
+    this.users.find((u) => u._id.toString() === user._id.toString()) !==
+    undefined
   );
 });
 
-channelSchema.method("isAdmin", async function (user: UserDocument) {
+channelSchema.method("isAdmin", function (user: UserDocument) {
   return this.admin.id.toString() === user.id.toString();
 });
 
