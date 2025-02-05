@@ -11,7 +11,7 @@ const channelSettingsSchema: ChannelSettingsSchema = new Schema({
   channel: { type: Schema.ObjectId, required: true },
   displayName: { type: String },
   nameColor: { type: String, match: /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i },
-  invisible: { type: Boolean, required: true, default: false },
+  invisible: { type: Boolean },
 });
 
 channelSettingsSchema.methods.changeDisplayName = async function (

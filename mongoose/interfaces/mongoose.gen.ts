@@ -125,7 +125,7 @@ export type ChannelSettings = {
   channel: mongoose.Types.ObjectId;
   displayName?: string;
   nameColor?: string;
-  invisible: boolean;
+  invisible?: boolean;
   _id: mongoose.Types.ObjectId;
 };
 
@@ -215,7 +215,7 @@ export type ChannelSettingsDocument = mongoose.Document<
     channel: mongoose.Types.ObjectId;
     displayName?: string;
     nameColor?: string;
-    invisible: boolean;
+    invisible?: boolean;
     _id: mongoose.Types.ObjectId;
   };
 

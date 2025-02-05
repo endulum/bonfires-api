@@ -6,9 +6,8 @@ import {
   ChannelModel,
   ChannelSchema,
 } from "../interfaces/mongoose.gen";
-// import { ChannelSettings } from "./channelSettings";
+import { ChannelSettings } from "./channelSettings";
 import { Message } from "./message";
-import { UserSettings } from "./userSettings";
 
 const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
@@ -45,16 +44,43 @@ channelSchema.method("updateAdmin", async function (user: UserDocument) {
 channelSchema.method("kick", async function (users: UserDocument[]) {
   this.users.pull(...users);
   await this.save();
+  await ChannelSettings.deleteMany({
+    $and: [{ channel: this }, { user: { $in: users } }],
+  });
 });
 
 channelSchema.method("invite", async function (users: UserDocument[]) {
   this.users.push(...users);
   await this.save();
+  await ChannelSettings.insertMany(
+    users.map((u) => ({ user: u, channel: this }))
+  );
 });
 
-channelSchema.pre("findOneAndDelete", async function (next) {
-  await Message.deleteMany({ channel: this });
-  await UserSettings.deleteMany({ channel: this });
+channelSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    // make sure the admin is included in the users array and gets own settings
+    this.users.push(this.admin);
+    await ChannelSettings.create({
+      user: this.admin,
+      channel: this,
+    });
+  }
+  return next();
+});
+
+// remove associated messages and ChannelSettings documents
+channelSchema.pre("deleteOne", async function (next) {
+  // deleteOne is a query hook, not a document hook,
+  // and i can't change this to a "findOneAndDelete" hook
+  // because not only is that also still a query hook,
+  // it will simply not run if `document` is set to true.
+  // this is a workaround to still get the id from `this`
+  if ("_conditions" in this) {
+    const id = (this["_conditions"] as { _id: mongoose.Types.ObjectId })["_id"];
+    await Message.deleteMany({ channel: id });
+    await ChannelSettings.deleteMany({ channel: id });
+  }
   return next();
 });
 
