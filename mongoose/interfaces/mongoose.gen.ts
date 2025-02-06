@@ -334,6 +334,7 @@ export type User = {
   ghId?: number;
   settings: UserSettings["_id"] | UserSettings;
   _id: mongoose.Types.ObjectId;
+  channelSettings: any;
 };
 
 /**
@@ -419,6 +420,7 @@ export type UserDocument = mongoose.Document<
     ghId?: number;
     settings: UserSettingsDocument["_id"] | UserSettingsDocument;
     _id: mongoose.Types.ObjectId;
+    channelSettings: any;
   };
 
 /**

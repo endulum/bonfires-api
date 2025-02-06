@@ -10,24 +10,34 @@ import {
 
 import { UserSettings } from "./userSettings";
 
-const userSchema: UserSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    match: /^[a-z0-9-]+$/g,
+const userSchema: UserSchema = new Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      match: /^[a-z0-9-]+$/g,
+    },
+    password: { type: String, select: false },
+    joined: { type: Date, default: () => Date.now(), immutable: true },
+    status: { type: String },
+    ghUser: { type: String, required: false },
+    ghId: { type: Number, required: false },
+    settings: {
+      type: Types.ObjectId,
+      ref: "UserSettings",
+      required: true,
+      default: () => new mongoose.Types.ObjectId(),
+    },
   },
-  password: { type: String, select: false },
-  joined: { type: Date, default: () => Date.now(), immutable: true },
-  status: { type: String },
-  ghUser: { type: String, required: false },
-  ghId: { type: Number, required: false },
-  settings: {
-    type: Types.ObjectId,
-    ref: "UserSettings",
-    required: true,
-    default: () => new mongoose.Types.ObjectId(),
-  },
+  { id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+);
+
+userSchema.virtual("channelSettings", {
+  ref: "ChannelSettings",
+  localField: "_id",
+  foreignField: "user",
+  justOne: true,
 });
 
 userSchema.query.byNameOrId = function (nameOrId: string): UserQuery {

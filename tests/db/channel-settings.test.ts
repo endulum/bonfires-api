@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+
 import "../memoryServer";
 import { createBulkUsers, seed } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
@@ -7,21 +9,25 @@ import {
 } from "../../mongoose/interfaces/mongoose.gen";
 import { ChannelSettings } from "../../mongoose/models/channelSettings";
 
+// ChannelSettings lets users have their own per server they're in:
+// - name color (red name in one channel, blue name in another)
+// - display name (their username in one channel, "Supreme Overlord" in another channel)
+// - invisibility (can be seen typing and viewing in one channel but not another)
+
 let admin: UserDocument | null = null;
+const users: UserDocument[] = [];
+let channel: ChannelDocument;
 
 beforeAll(async () => {
   admin = await seed();
 });
 
 describe("atomicity", () => {
-  let users: UserDocument[] = [];
-  let channel: ChannelDocument;
-
   beforeAll(async () => {
-    users = await createBulkUsers(10);
+    users.push(...(await createBulkUsers(10)));
     channel = await Channel.create({
       admin,
-      title: "Channel #1",
+      title: "It's A Channel",
     });
   });
 
@@ -47,5 +53,95 @@ describe("atomicity", () => {
     await Channel.deleteOne({ _id: channel._id });
     const channelSettings = await ChannelSettings.find({});
     expect(channelSettings.length).toBe(0);
+  });
+});
+
+describe("population", () => {
+  async function getQuery() {
+    return await Channel.findById(channel._id).populate({
+      path: "users",
+      select: ["username"],
+      populate: [
+        {
+          path: "channelSettings",
+          model: "ChannelSettings",
+          match: { channel: channel._id },
+          select: ["displayName", "nameColor", "-_id", "-user"],
+        },
+        {
+          path: "settings",
+          select: ["defaultNameColor", "-_id"],
+        },
+      ],
+    });
+  }
+  beforeAll(async () => {
+    channel = await Channel.create({
+      admin,
+      title: "It's A Channel",
+    });
+    await channel.invite(users);
+  });
+
+  test("each user has `settings` and `channelSettings` properties", async () => {
+    const query = await getQuery();
+    if (!query) throw new Error("Query is undefined.");
+    // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
+
+    expect(
+      query.users.every((user) => {
+        return "settings" in user && "channelSettings" in user;
+      })
+    ).toBeTruthy();
+  });
+
+  test("`channelSettings` has defined properties when a user has channel settings", async () => {
+    // assign random colors to five random users
+    await Promise.all(
+      users
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 5)
+        .map(async (user) => {
+          await ChannelSettings.updateOne(
+            { user, channel },
+            { nameColor: faker.internet.color() }
+          );
+        })
+    );
+    // assign random display names to five random users
+    await Promise.all(
+      users
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 5)
+        .map(async (user) => {
+          await ChannelSettings.updateOne(
+            { user, channel },
+            { displayName: faker.person.fullName() }
+          );
+        })
+    );
+
+    const query = await getQuery();
+    if (!query) throw new Error("Query is undefined.");
+    // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
+
+    expect(
+      query.users.filter(
+        (user) => user.channelSettings.displayName !== undefined
+      ).length
+    ).toBe(5);
+    expect(
+      query.users.filter((user) => user.channelSettings.nameColor !== undefined)
+        .length
+    ).toBe(5);
+  });
+
+  test("can evaluate a user's preferred name and color", async () => {
+    const query = JSON.parse(JSON.stringify(await getQuery()));
+    const mappedUsers = query.users.map((user) => ({
+      name: user.channelSettings.displayName ?? user.username,
+      color: user.channelSettings.nameColor ?? user.settings.defaultNameColor,
+    }));
+    expect(mappedUsers.every((user) => user.name && user.color));
   });
 });

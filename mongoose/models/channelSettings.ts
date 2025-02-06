@@ -7,8 +7,11 @@ import {
 } from "../interfaces/mongoose.gen";
 
 const channelSettingsSchema: ChannelSettingsSchema = new Schema({
+  // the refs
   user: { type: Schema.ObjectId, required: true },
   channel: { type: Schema.ObjectId, required: true },
+
+  // the settings
   displayName: { type: String },
   nameColor: { type: String, match: /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i },
   invisible: { type: Boolean },
