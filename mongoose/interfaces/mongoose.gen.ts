@@ -54,6 +54,7 @@ export type ChannelQuery = mongoose.Query<
  */
 export type ChannelQueries = {
   byId: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
+  withUsersAndSettings: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
 };
 
 export type ChannelMethods = {

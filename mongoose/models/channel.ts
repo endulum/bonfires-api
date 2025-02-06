@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 
 import {
   UserDocument,
@@ -19,6 +19,25 @@ const channelSchema: ChannelSchema = new Schema({
 channelSchema.query.byId = function (id: string) {
   if (mongoose.isValidObjectId(id)) return this.where({ _id: id });
   return this.where({ _id: undefined });
+};
+
+channelSchema.query.withUsersAndSettings = function (id: Types.ObjectId) {
+  return this.populate({
+    path: "users",
+    select: ["username"],
+    populate: [
+      {
+        path: "channelSettings",
+        model: "ChannelSettings",
+        match: { channel: id },
+        select: ["displayName", "nameColor", "-_id", "-user"],
+      },
+      {
+        path: "settings",
+        select: ["defaultNameColor", "-_id"],
+      },
+    ],
+  });
 };
 
 channelSchema.method("isInChannel", function (user: UserDocument) {

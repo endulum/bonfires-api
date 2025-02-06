@@ -57,24 +57,6 @@ describe("atomicity", () => {
 });
 
 describe("population", () => {
-  async function getQuery() {
-    return await Channel.findById(channel._id).populate({
-      path: "users",
-      select: ["username"],
-      populate: [
-        {
-          path: "channelSettings",
-          model: "ChannelSettings",
-          match: { channel: channel._id },
-          select: ["displayName", "nameColor", "-_id", "-user"],
-        },
-        {
-          path: "settings",
-          select: ["defaultNameColor", "-_id"],
-        },
-      ],
-    });
-  }
   beforeAll(async () => {
     channel = await Channel.create({
       admin,
@@ -84,7 +66,7 @@ describe("population", () => {
   });
 
   test("each user has `settings` and `channelSettings` properties", async () => {
-    const query = await getQuery();
+    const query = await Channel.findOne().withUsersAndSettings(channel._id);
     if (!query) throw new Error("Query is undefined.");
     // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
@@ -121,7 +103,7 @@ describe("population", () => {
         })
     );
 
-    const query = await getQuery();
+    const query = await Channel.findOne().withUsersAndSettings(channel._id);
     if (!query) throw new Error("Query is undefined.");
     // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
@@ -137,7 +119,9 @@ describe("population", () => {
   });
 
   test("can evaluate a user's preferred name and color", async () => {
-    const query = JSON.parse(JSON.stringify(await getQuery()));
+    const query = JSON.parse(
+      JSON.stringify(await Channel.findOne().withUsersAndSettings(channel._id))
+    );
     const mappedUsers = query.users.map((user) => ({
       name: user.channelSettings.displayName ?? user.username,
       color: user.channelSettings.nameColor ?? user.settings.defaultNameColor,
