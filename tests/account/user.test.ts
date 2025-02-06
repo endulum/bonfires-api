@@ -88,7 +88,7 @@ describe("GET /user/:user", () => {
   });
 
   test("200 and user details (using id)", async () => {
-    const response = await req(`GET /user/${admin!.id}`);
+    const response = await req(`GET /user/${admin!._id}`);
     assertCode(response, 200);
     expect(response.body).not.toHaveProperty("password");
     logBody(response);

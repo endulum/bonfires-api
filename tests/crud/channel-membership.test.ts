@@ -123,7 +123,7 @@ describe("POST /channel/:channel/invite/:user", () => {
 
   test("400 if user is in channel", async () => {
     const response = await req(
-      `POST /channel/${channel._id}/invite/${users[0].id}`,
+      `POST /channel/${channel._id}/invite/${users[0]._id}`,
       adminToken
     );
     assertCode(response, 400, "This user is already in this channel.");
@@ -131,7 +131,7 @@ describe("POST /channel/:channel/invite/:user", () => {
 
   test("200 and adds user to channel", async () => {
     let response = await req(
-      `POST /channel/${channel._id}/invite/${users[1].id}`,
+      `POST /channel/${channel._id}/invite/${users[1]._id}`,
       adminToken
     );
     assertCode(response, 200);
@@ -157,7 +157,7 @@ describe("POST /channel/:channel/kick/:user", () => {
 
   test("400 if user is not in channel", async () => {
     const response = await req(
-      `POST /channel/${channel._id}/kick/${users[1].id}`,
+      `POST /channel/${channel._id}/kick/${users[1]._id}`,
       adminToken
     );
     assertCode(response, 400, "This user is not in this channel.");
@@ -165,7 +165,7 @@ describe("POST /channel/:channel/kick/:user", () => {
 
   test("200 and removes user from channel", async () => {
     let response = await req(
-      `POST /channel/${channel._id}/kick/${users[0].id}`,
+      `POST /channel/${channel._id}/kick/${users[0]._id}`,
       adminToken
     );
     assertCode(response, 200);
@@ -191,7 +191,7 @@ describe("POST /channel/:channel/promote/:user", () => {
 
   test("400 if user is not in channel", async () => {
     const response = await req(
-      `POST /channel/${channel._id}/promote/${users[1].id}`,
+      `POST /channel/${channel._id}/promote/${users[1]._id}`,
       adminToken
     );
     assertCode(response, 400, "This user is not in this channel.");
@@ -199,7 +199,7 @@ describe("POST /channel/:channel/promote/:user", () => {
 
   test("400 if trying to promote self", async () => {
     const response = await req(
-      `POST /channel/${channel._id}/promote/${admin.id}`,
+      `POST /channel/${channel._id}/promote/${admin._id}`,
       adminToken
     );
     assertCode(response, 400, "You cannot promote yourself.");
@@ -207,11 +207,11 @@ describe("POST /channel/:channel/promote/:user", () => {
 
   test("200 and replaces admin", async () => {
     let response = await req(
-      `POST /channel/${channel._id}/promote/${users[0].id}`,
+      `POST /channel/${channel._id}/promote/${users[0]._id}`,
       adminToken
     );
     assertCode(response, 200);
     response = await req(`GET /channel/${channel._id}`, adminToken);
-    expect(response.body.admin._id).toBe(users[0].id);
+    expect(response.body.admin._id).toBe(users[0]._id.toString());
   });
 });

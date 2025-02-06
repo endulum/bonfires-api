@@ -29,7 +29,7 @@ channelSchema.method("isInChannel", function (user: UserDocument) {
 });
 
 channelSchema.method("isAdmin", function (user: UserDocument) {
-  return this.admin.id.toString() === user.id.toString();
+  return this.admin._id.toString() === user._id.toString();
 });
 
 channelSchema.method("updateTitle", async function (newTitle: string) {

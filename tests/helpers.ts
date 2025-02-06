@@ -131,7 +131,7 @@ export async function token(username: string): Promise<string> {
   if (!process.env.JWT_SECRET) throw new Error("Token secret is not defined.");
 
   const token = jwt.sign(
-    { user: user.username, id: user.id },
+    { user: user.username, id: user._id },
     process.env.JWT_SECRET
   );
 

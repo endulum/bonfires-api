@@ -66,7 +66,7 @@ userSchema.method(
 
 userSchema.method("comparePassword", async function (password: string) {
   const user: UserDocument & { password?: string } = await this.model("User")
-    .findById(this.id)
+    .findById(this._id)
     .select("+password");
   if (!user || !user.password) return false;
   return bcrypt.compare(password, user.password as string);
@@ -76,7 +76,7 @@ userSchema.pre("save", async function (next) {
   // create UserSettings object if User is new
   if (this.isNew) {
     const settings = await UserSettings.create({});
-    this.settings = settings.id;
+    this.settings = settings._id;
   }
   // hash incoming new password
   if (this.password && this.isModified("password")) {

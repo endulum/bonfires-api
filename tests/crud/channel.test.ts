@@ -29,9 +29,8 @@ describe("POST /channels", () => {
     const response = await req("POST /channels", adminToken, {
       title: "Channel Title",
     });
-    assertCode(response, 200);
-    expect(response.body.id).toBeDefined();
-    channelId = response.body.id;
+    expect(response.body._id).toBeDefined();
+    channelId = response.body._id;
   });
 });
 

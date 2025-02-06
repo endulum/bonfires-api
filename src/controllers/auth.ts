@@ -24,7 +24,12 @@ export const usernameValidation = body("username")
     if (isValidObjectId(value))
       throw new Error("Usernames cannot be MongoIDs.");
     const existingUser = await User.findOne({ username: value });
-    if (existingUser && !("user" in req && existingUser.id === req.user.id)) {
+    if (
+      existingUser &&
+      !(
+        "user" in req && existingUser._id.toString() === req.user._id.toString()
+      )
+    ) {
       throw new Error(
         "A user with this username already exists. Usernames must be unique."
       );
@@ -99,7 +104,7 @@ export const login = [
   validate,
   asyncHandler(async (req, res) => {
     res.json({
-      token: await signToken(req.user.id, req.user.username),
+      token: await signToken(req.user._id, req.user.username),
     });
   }),
 ];
@@ -142,15 +147,15 @@ export const github = asyncHandler(async (req, res) => {
 
   let username = "";
   let id: Types.ObjectId | null = null;
-  const existingUser = await User.findOne({ ghId: githubUser.id });
+  const existingUser = await User.findOne({ ghId: githubUser._id });
   if (existingUser) {
     username = existingUser.username;
-    id = existingUser.id;
+    id = existingUser._id;
     await existingUser.updateGitHubUser(githubUser.login);
   } else {
     const newUser = await User.create({
       username: githubUser.login,
-      ghId: githubUser.id,
+      ghId: githubUser._id,
       ghUser: githubUser.login,
     });
     username = githubUser.login;

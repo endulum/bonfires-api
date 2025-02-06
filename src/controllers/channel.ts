@@ -24,7 +24,7 @@ export const create = [
       title: req.body.title,
       admin: req.user,
     });
-    res.json({ id: channel._id });
+    res.json({ _id: channel._id });
   }),
 ];
 
@@ -45,7 +45,7 @@ export const exists = asyncHandler(async (req, res, next) => {
 });
 
 export const isInChannel = [
-  user.authenticate,
+  ...user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
     if (req.thisChannel.isInChannel(req.user)) return next();
@@ -102,7 +102,7 @@ export const getMutual = [
   asyncHandler(async (req, res) => {
     const channels = await Channel.find({
       users: {
-        $all: [req.user.id, req.thisUser.id],
+        $all: [req.user._id, req.thisUser._id],
       },
     }).select(["id", "title"]);
     res.json(channels);
