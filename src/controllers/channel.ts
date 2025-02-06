@@ -73,7 +73,11 @@ export const isAdminOfChannel = [
 export const get = [
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    res.json(await Channel.findOne().withUsersAndSettings(req.thisChannel._id));
+    res.json(
+      await Channel.findOne()
+        .withUsersAndSettings(req.thisChannel._id)
+        .populate({ path: "admin", select: "id username" })
+    );
   }),
 ];
 
