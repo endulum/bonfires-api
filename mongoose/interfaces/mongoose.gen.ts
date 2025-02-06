@@ -163,9 +163,7 @@ export type ChannelSettingsQuery = mongoose.Query<
 export type ChannelSettingsQueries = {};
 
 export type ChannelSettingsMethods = {
-  changeDisplayName: (this: ChannelSettingsDocument, ...args: any[]) => any;
-  changeNameColor: (this: ChannelSettingsDocument, ...args: any[]) => any;
-  toggleInvisible: (this: ChannelSettingsDocument, ...args: any[]) => any;
+  update: (this: ChannelSettingsDocument, ...args: any[]) => any;
 };
 
 export type ChannelSettingsStatics = {};

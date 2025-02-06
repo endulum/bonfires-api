@@ -4,6 +4,7 @@ import { body } from "express-validator";
 import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
 import * as user from "./user";
+import { ChannelSettings } from "../../mongoose/models/channelSettings";
 
 export const validation = [
   body("title")
@@ -48,8 +49,16 @@ export const isInChannel = [
   ...user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
-    if (req.thisChannel.isInChannel(req.user)) return next();
-    else res.status(403).send("You are not in this channel.");
+    const thisChannelSettings = await ChannelSettings.findOne({
+      user: req.user,
+      channel: req.thisChannel,
+    });
+    if (!thisChannelSettings)
+      res.status(403).send("You are not in this channel.");
+    else {
+      req.thisChannelSettings = thisChannelSettings;
+      return next();
+    }
   }),
 ];
 
@@ -64,7 +73,7 @@ export const isAdminOfChannel = [
 export const get = [
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    res.json(req.thisChannel);
+    res.json(await Channel.findOne().withUsersAndSettings(req.thisChannel._id));
   }),
 ];
 
@@ -74,6 +83,31 @@ export const edit = [
   validate,
   asyncHandler(async (req, res) => {
     await req.thisChannel.updateTitle(req.body.title);
+    res.sendStatus(200);
+  }),
+];
+
+export const editSettings = [
+  ...isInChannel,
+  body("displayName")
+    .trim()
+    .optional({ values: "falsy" })
+    .isLength({ min: 1, max: 32 })
+    .withMessage("Display names cannot be longer than 32 characters.")
+    .escape(),
+  body("nameColor")
+    .trim()
+    .optional({ values: "falsy" })
+    .isHexColor()
+    .withMessage("Color must be a valid hex color, i.e. #FFFFFF"),
+  body("invisible")
+    .trim()
+    .optional({ values: "undefined" })
+    .isBoolean()
+    .withMessage('Must be "true" or "false".'),
+  validate,
+  asyncHandler(async (req, res) => {
+    await req.thisChannelSettings.update(req.body);
     res.sendStatus(200);
   }),
 ];

@@ -1,5 +1,6 @@
 import {
   ChannelDocument,
+  ChannelSettingsDocument,
   UserDocument,
 } from "../mongoose/interfaces/mongoose.gen";
 import { PopulatedDocument } from "../mongoose/interfaces/mongoose.gen";
@@ -14,6 +15,7 @@ declare global {
         PopulatedDocument<ChannelDocument, "admin">,
         "users"
       >;
+      thisChannelSettings: ChannelSettingsDocument;
     }
   }
 }

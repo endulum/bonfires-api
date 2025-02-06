@@ -17,26 +17,20 @@ const channelSettingsSchema: ChannelSettingsSchema = new Schema({
   invisible: { type: Boolean },
 });
 
-channelSettingsSchema.methods.changeDisplayName = async function (
-  newDisplayName: string | undefined
-) {
-  this.displayName = newDisplayName;
-  await this.save();
-};
-
-channelSettingsSchema.methods.changeNameColor = async function (
-  newNameColor: string | undefined
-) {
-  this.nameColor = newNameColor;
-  await this.save();
-};
-
-channelSettingsSchema.methods.toggleInvisible = async function (
-  value?: boolean
-) {
-  this.invisible = value !== undefined ? value : !this.invisible;
-  await this.save();
-};
+channelSettingsSchema.method(
+  "update",
+  async function (body: Record<string, string>) {
+    this.displayName = body.displayName !== "" ? body.displayName : undefined;
+    this.nameColor = body.nameColor !== "" ? body.nameColor : undefined;
+    this.invisible =
+      body.invisible === "true"
+        ? true
+        : body.invisible === "false"
+        ? false
+        : undefined;
+    await this.save();
+  }
+);
 
 export const ChannelSettings = mongoose.model<
   ChannelSettingsDocument,
