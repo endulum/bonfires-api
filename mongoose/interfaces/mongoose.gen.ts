@@ -227,8 +227,8 @@ export type ChannelSettingsDocument = mongoose.Document<
  * ```
  */
 export type Message = {
-  channel: mongoose.Types.ObjectId;
-  user: mongoose.Types.ObjectId;
+  channel: User["_id"] | User;
+  user: Channel["_id"] | Channel;
   timestamp?: Date;
   content: string;
   _id: mongoose.Types.ObjectId;
@@ -309,8 +309,8 @@ export type MessageDocument = mongoose.Document<
   MessageQueries
 > &
   MessageMethods & {
-    channel: mongoose.Types.ObjectId;
-    user: mongoose.Types.ObjectId;
+    channel: UserDocument["_id"] | UserDocument;
+    user: ChannelDocument["_id"] | ChannelDocument;
     timestamp?: Date;
     content: string;
     _id: mongoose.Types.ObjectId;

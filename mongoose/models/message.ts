@@ -7,8 +7,8 @@ import {
 } from "../interfaces/mongoose.gen";
 
 const messageSchema: MessageSchema = new Schema({
-  channel: { type: Schema.ObjectId, required: true },
-  user: { type: Schema.ObjectId, required: true },
+  channel: { type: Schema.ObjectId, ref: "User", required: true },
+  user: { type: Schema.ObjectId, ref: "Channel", required: true },
   timestamp: { type: Date, default: () => Date.now(), immutable: true },
   content: { type: String, required: true },
 });
