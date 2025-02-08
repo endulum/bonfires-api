@@ -1,5 +1,5 @@
 import "../memoryServer";
-import { req, assertCode, assertInputErrors, token, logBody } from "../helpers";
+import { req, assertCode, assertInputErrors, token } from "../helpers";
 import { seed } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
@@ -40,6 +40,6 @@ describe("POST /channel/:channel/messages", () => {
       correctInputs
     );
     assertCode(response, 200);
-    logBody(response);
+    //logBody(response);
   });
 });

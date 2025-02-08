@@ -2,11 +2,8 @@ import asyncHandler from "express-async-handler";
 import { body } from "express-validator";
 
 import { validate } from "../middleware/validate";
-import { Channel } from "../../mongoose/models/channel";
 import { Message } from "../../mongoose/models/message";
-import * as user from "./user";
 import * as channel from "./channel";
-import { ChannelSettings } from "../../mongoose/models/channelSettings";
 
 export const validation = body("content")
   .trim()
@@ -34,11 +31,30 @@ export const create = [
 export const getForChannel = [
   ...channel.isInChannel,
   asyncHandler(async (req, res) => {
+    const take = 5;
+    const { before } = req.query as Record<string, string | undefined>;
     const messages = await Message.find({
       channel: req.thisChannel,
+      ...(before && {
+        timestamp: {
+          $lte: before,
+        },
+      }),
     })
-      .limit(5)
-      .sort("-timestamp -_id");
-    res.json(messages);
+      .limit(take + 1)
+      .sort("-timestamp -_id")
+      .select("-channel");
+
+    res.json({
+      messages: messages.slice(0, take),
+      links: {
+        nextPage:
+          messages.length > take
+            ? `/channel/${req.thisChannel._id}/messages?before=${messages[
+                messages.length - 1
+              ].timestamp?.getTime()}`
+            : null,
+      },
+    });
   }),
 ];

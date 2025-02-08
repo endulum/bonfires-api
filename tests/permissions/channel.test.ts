@@ -26,6 +26,8 @@ test("member-only action", async () => {
     [
       `GET /channel/${channel._id}`,
       `POST /channel/${channel._id}/invite/${users[2]._id}`,
+      `POST /channel/${channel._id}/messages`,
+      `GET /channel/${channel._id}/messages`,
     ].map(async (url) => {
       try {
         const response = await req(url, strangerToken);
