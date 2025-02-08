@@ -34,8 +34,6 @@ export const exists = asyncHandler(async (req, res, next) => {
     .byId(req.params.channel)
     .populate([
       { path: "admin", select: "id username" },
-      // todo: let "status" still be present and defined, just as an empty string.
-      // same for default color.
       { path: "users", select: "id username" },
     ]);
   if (!channel) res.status(404).send("Channel could not be found.");
@@ -49,16 +47,23 @@ export const isInChannel = [
   ...user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
-    const thisChannelSettings = await ChannelSettings.findOne({
-      user: req.user,
-      channel: req.thisChannel,
-    });
-    if (!thisChannelSettings)
-      res.status(403).send("You are not in this channel.");
-    else {
-      req.thisChannelSettings = thisChannelSettings;
+    if (
+      req.thisChannel.users.find(
+        (u) => u._id.toString() === req.user._id.toString()
+      ) !== undefined
+    ) {
+      let channelSettings = await ChannelSettings.findOne({
+        user: req.user,
+        channel: req.thisChannel,
+      });
+      if (!channelSettings)
+        channelSettings = await ChannelSettings.create({
+          user: req.user,
+          channel: req.thisChannel,
+        });
+      req.thisChannelSettings = channelSettings;
       return next();
-    }
+    } else res.status(403).send("You are not in this channel.");
   }),
 ];
 
