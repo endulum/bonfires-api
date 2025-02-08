@@ -17,10 +17,9 @@ export async function wipe() {
   );
 }
 
-export async function seed() {
+export async function wipeWithAdmin() {
   await wipe();
   const admin = await User.create({ username: "admin", password: "password" });
-  await admin.save();
   return admin;
 }
 

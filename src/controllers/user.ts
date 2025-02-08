@@ -110,6 +110,7 @@ export const exists = asyncHandler(async (req, res, next) => {
 });
 
 export const get = [
+  ...authenticate,
   exists,
   asyncHandler(async (req, res) => {
     res.json(req.thisUser);

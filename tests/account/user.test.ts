@@ -1,6 +1,6 @@
 import "../memoryServer";
 import { req, assertCode, assertInputErrors, token, logBody } from "../helpers";
-import { seed } from "../../mongoose/dev";
+import { wipeWithAdmin } from "../../mongoose/dev";
 import { User } from "../../mongoose/models/user";
 import { UserDocument } from "../../mongoose/interfaces/mongoose.gen";
 
@@ -8,7 +8,7 @@ let admin: UserDocument | null = null;
 let adminToken: string = "";
 
 beforeAll(async () => {
-  admin = await seed();
+  admin = await wipeWithAdmin();
   adminToken = await token("admin");
   await User.create({ username: "basic", password: "password" });
 });
@@ -83,19 +83,19 @@ describe("PUT /me", () => {
 
 describe("GET /user/:user", () => {
   test("404 if user not found", async () => {
-    const response = await req("GET /user/owo");
+    const response = await req("GET /user/owo", adminToken);
     assertCode(response, 404, "User could not be found.");
   });
 
   test("200 and user details (using id)", async () => {
-    const response = await req(`GET /user/${admin!._id}`);
+    const response = await req(`GET /user/${admin!._id}`, adminToken);
     assertCode(response, 200);
     expect(response.body).not.toHaveProperty("password");
     logBody(response);
   });
 
   test("200 and user details (using username)", async () => {
-    const response = await req("GET /user/admin");
+    const response = await req("GET /user/admin", adminToken);
     assertCode(response, 200);
     expect(response.body).not.toHaveProperty("password");
   });

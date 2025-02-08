@@ -1,7 +1,7 @@
 import "../memoryServer";
 import { token } from "../helpers";
 import { assertPagination } from "./listHelpers";
-import { seed } from "../../mongoose/dev";
+import { wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
   ChannelDocument,
@@ -15,7 +15,7 @@ let admin: UserDocument;
 let channel: ChannelDocument;
 
 beforeAll(async () => {
-  admin = await seed();
+  admin = await wipeWithAdmin();
   adminToken = await token("admin");
   channel = await Channel.create({
     admin,

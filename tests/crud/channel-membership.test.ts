@@ -1,6 +1,10 @@
 import "../memoryServer";
 import { req, assertCode, token } from "../helpers";
-import { createBulkUsers, createBulkChannels, seed } from "../../mongoose/dev";
+import {
+  createBulkUsers,
+  createBulkChannels,
+  wipeWithAdmin,
+} from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
   ChannelDocument,
@@ -11,7 +15,7 @@ let admin: UserDocument;
 let adminToken: string;
 
 beforeAll(async () => {
-  admin = await seed();
+  admin = await wipeWithAdmin();
   adminToken = await token("admin");
 });
 
@@ -58,7 +62,7 @@ describe("POST /channel/:channel/leave", () => {
   let user: UserDocument;
 
   beforeAll(async () => {
-    admin = await seed();
+    admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
       admin,
@@ -111,7 +115,7 @@ describe("POST /channel/:channel/invite/:user", () => {
   const users: UserDocument[] = [];
 
   beforeAll(async () => {
-    admin = await seed();
+    admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
       admin,
@@ -145,7 +149,7 @@ describe("POST /channel/:channel/kick/:user", () => {
   const users: UserDocument[] = [];
 
   beforeAll(async () => {
-    admin = await seed();
+    admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
       admin,
@@ -179,7 +183,7 @@ describe("POST /channel/:channel/promote/:user", () => {
   const users: UserDocument[] = [];
 
   beforeAll(async () => {
-    admin = await seed();
+    admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
       admin,

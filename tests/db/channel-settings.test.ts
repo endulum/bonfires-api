@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 
 import "../memoryServer";
-import { createBulkUsers, seed } from "../../mongoose/dev";
+import { createBulkUsers, wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
   UserDocument,
@@ -19,7 +19,7 @@ const users: UserDocument[] = [];
 let channel: ChannelDocument;
 
 beforeAll(async () => {
-  admin = await seed();
+  admin = await wipeWithAdmin();
 });
 
 describe("atomicity", () => {

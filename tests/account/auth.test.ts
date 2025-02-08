@@ -1,12 +1,12 @@
 import "../memoryServer";
 import { req, assertCode, assertInputErrors } from "../helpers";
-import { seed } from "../../mongoose/dev";
+import { wipeWithAdmin } from "../../mongoose/dev";
 import { User } from "../../mongoose/models/user";
 
 let token: string = "";
 
 beforeAll(async () => {
-  await seed();
+  await wipeWithAdmin();
 });
 
 describe("POST /login", () => {

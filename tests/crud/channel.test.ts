@@ -1,6 +1,6 @@
 import "../memoryServer";
 import { req, assertCode, assertInputErrors, token, logBody } from "../helpers";
-import { createBulkUsers, seed } from "../../mongoose/dev";
+import { createBulkUsers, wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import { ChannelDocument } from "../../mongoose/interfaces/mongoose.gen";
 
@@ -8,7 +8,7 @@ let adminToken: string = "";
 let channelId: string | null = null;
 
 beforeAll(async () => {
-  await seed();
+  await wipeWithAdmin();
   adminToken = await token("admin");
 });
 
