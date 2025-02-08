@@ -64,6 +64,11 @@ userSchema.method(
   }
 );
 
+userSchema.method("updateGitHubUser", async function (ghUser: string) {
+  this.ghUser = ghUser;
+  await this.save();
+});
+
 userSchema.method("comparePassword", async function (password: string) {
   const user: UserDocument & { password?: string } = await this.model("User")
     .findById(this._id)
