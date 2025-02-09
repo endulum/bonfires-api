@@ -13,7 +13,7 @@ const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
   admin: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
-  lastActivity: { type: Date, default: () => Date.now(), immutable: true },
+  lastActivity: { type: Date, default: () => Date.now() },
 });
 
 channelSchema.static(

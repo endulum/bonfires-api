@@ -33,13 +33,16 @@ describe("POST /channel/:channel/messages", () => {
     });
   });
 
-  test("200 and returns message", async () => {
-    const response = await req(
+  test("200 and returns message + updates the `lastActivity` of a channel", async () => {
+    let response = await req(
       `POST /channel/${channel._id}/messages`,
       adminToken,
       correctInputs
     );
     assertCode(response, 200);
-    //logBody(response);
+    const timestamp = response.body.timestamp;
+
+    response = await req(`GET /channel/${channel._id}`, adminToken);
+    expect(response.body.lastActivity).toEqual(timestamp);
   });
 });

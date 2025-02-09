@@ -6,6 +6,7 @@ import {
   MessageSchema,
   ChannelDocument,
 } from "../interfaces/mongoose.gen";
+import { Channel } from "./channel";
 
 const messageSchema: MessageSchema = new Schema({
   channel: { type: Schema.ObjectId, ref: "User", required: true },
@@ -42,6 +43,14 @@ messageSchema.static(
     };
   }
 );
+
+messageSchema.post("save", async function (doc, next) {
+  await Channel.updateOne(
+    { _id: doc.channel.toString() },
+    { lastActivity: doc.timestamp }
+  );
+  return next();
+});
 
 export const Message = mongoose.model<MessageDocument, MessageModel>(
   "Message",
