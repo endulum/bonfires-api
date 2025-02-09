@@ -9,6 +9,7 @@ import {
 } from "../interfaces/mongoose.gen";
 
 import { UserSettings } from "./userSettings";
+import { Channel } from "./channel";
 
 const userSchema: UserSchema = new Schema(
   {
@@ -44,6 +45,15 @@ userSchema.query.byNameOrId = function (nameOrId: string): UserQuery {
   if (mongoose.isValidObjectId(nameOrId)) return this.where({ _id: nameOrId });
   return this.where({ username: nameOrId });
 };
+
+userSchema.method("getMutualChannels", async function (user: UserDocument) {
+  const channels = await Channel.find({
+    users: {
+      $all: [this._id, user._id],
+    },
+  }).select(["id", "title"]);
+  return channels;
+});
 
 userSchema.method(
   "updateDetails",

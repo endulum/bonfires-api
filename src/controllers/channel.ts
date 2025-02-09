@@ -47,7 +47,7 @@ export const isInChannel = [
   exists,
   asyncHandler(async (req, res, next) => {
     if (req.thisChannel.isInChannel(req.user)) {
-      req.thisChannelSettings = req.thisChannel.getSettings(req.user);
+      req.thisChannelSettings = await req.thisChannel.getSettings(req.user);
       return next();
     } else res.status(403).send("You are not in this channel.");
   }),
@@ -129,11 +129,7 @@ export const getMutual = [
   ...user.authenticate,
   user.exists,
   asyncHandler(async (req, res) => {
-    const channels = await Channel.find({
-      users: {
-        $all: [req.user._id, req.thisUser._id],
-      },
-    }).select(["id", "title"]);
+    const channels = await req.user.getMutualChannels(req.thisUser);
     res.json(channels);
   }),
 ];
