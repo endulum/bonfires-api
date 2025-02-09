@@ -138,7 +138,7 @@ export const leave = [
   ...user.authenticate,
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    if (req.user._id.toString() === req.thisChannel.admin._id.toString()) {
+    if (req.thisChannel.isAdmin(req.user)) {
       if (req.thisChannel.users.length > 1) {
         res
           .status(403)
