@@ -13,7 +13,41 @@ const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
   admin: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
+  lastActivity: { type: Date, default: () => Date.now(), immutable: true },
 });
+
+channelSchema.static(
+  "getPaginated",
+  async function (
+    user: UserDocument,
+    take: number = 15,
+    title: string = "",
+    before?: string
+  ) {
+    const channels = await Channel.find({
+      users: { $in: user },
+      ...(title &&
+        title !== "" && {
+          title: { $regex: title, $options: "i" },
+        }),
+      ...(before && {
+        lastActivity: {
+          $lte: before,
+        },
+      }),
+    })
+      .limit(take + 1)
+      .sort("-lastActivity -_id");
+
+    return {
+      channels: channels.slice(0, take),
+      nextChannelTimestamp:
+        channels.length > take
+          ? channels[channels.length - 1].lastActivity?.getTime()
+          : null,
+    };
+  }
+);
 
 // this is to avoid 500's if the :channel param isn't an id
 channelSchema.query.byId = function (id: string) {

@@ -18,7 +18,7 @@ router.route("/user/:user").get(user.get);
 router.route("/user/:user/mutual").get(channel.getMutual);
 
 // channel
-router.route("/channels").post(user.authenticate, channel.create);
+router.route("/channels").get(channel.getAll).post(channel.create);
 router
   .route("/channel/:channel")
   .get(channel.get)

@@ -68,7 +68,9 @@ export type ChannelMethods = {
   invite: (this: ChannelDocument, ...args: any[]) => any;
 };
 
-export type ChannelStatics = {};
+export type ChannelStatics = {
+  getPaginated: (this: ChannelModel, ...args: any[]) => any;
+};
 
 /**
  * Mongoose Model type

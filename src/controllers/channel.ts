@@ -5,6 +5,33 @@ import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
 import * as user from "./user";
 
+export const getAll = [
+  ...user.authenticate,
+  asyncHandler(async (req, res) => {
+    const take = parseInt((req.query.take as string) ?? "", 10) || 15;
+    const before = req.query.before;
+    const title = req.query.title;
+
+    const { channels, nextChannelTimestamp } = await Channel.getPaginated(
+      req.user,
+      take,
+      title,
+      before
+    );
+
+    res.json({
+      channels,
+      links: {
+        nextPage: nextChannelTimestamp
+          ? `/channels?before=${nextChannelTimestamp}&take=${take}${
+              title && title !== "" ? `&title=${title}` : ""
+            }`
+          : null,
+      },
+    });
+  }),
+];
+
 export const validation = [
   body("title")
     .trim()
@@ -17,6 +44,7 @@ export const validation = [
 ];
 
 export const create = [
+  ...user.authenticate,
   ...validation,
   validate,
   asyncHandler(async (req, res) => {

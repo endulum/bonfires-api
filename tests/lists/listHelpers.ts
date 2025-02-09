@@ -12,7 +12,7 @@ export async function assertPagination({
 }: {
   reqArgs: [string, string | null];
   expectedProperty: string; // 'communities', 'posts', whatever it'll be called
-  expectedTotal: number; // expected total results
+  expectedTotal?: number; // expected total results
   expectedPerPage: number; // expected results per page
   perPageAssertion?: (response: Response) => void; // test to run each page
   backward?: boolean; // go backward, too?
@@ -43,17 +43,17 @@ export async function assertPagination({
     results[pageCount] = response.body[expectedProperty].map(mapToRecord);
   }
 
-  // console.log(results);
+  if (expectedTotal) {
+    // use record to expect a correct amount of results
+    expect(
+      Object.keys(results).reduce((acc: number, curr: string) => {
+        return acc + results[parseInt(curr, 10)].length;
+      }, 0)
+    ).toEqual(expectedTotal);
 
-  // use record to expect a correct amount of results
-  expect(
-    Object.keys(results).reduce((acc: number, curr: string) => {
-      return acc + results[parseInt(curr, 10)].length;
-    }, 0)
-  ).toEqual(expectedTotal);
-
-  // use record to expect a correct amount of pages
-  expect(pageCount).toEqual(Math.ceil(expectedTotal / expectedPerPage));
+    // use record to expect a correct amount of pages
+    expect(pageCount).toEqual(Math.ceil(expectedTotal / expectedPerPage));
+  }
 
   if (backward) {
     // page backward, comparing against recorded "pages"
