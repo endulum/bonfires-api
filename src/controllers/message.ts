@@ -31,29 +31,17 @@ export const create = [
 export const getForChannel = [
   ...channel.isInChannel,
   asyncHandler(async (req, res) => {
-    const take = 5;
-    const { before } = req.query as Record<string, string | undefined>;
-    const messages = await Message.find({
-      channel: req.thisChannel,
-      ...(before && {
-        timestamp: {
-          $lte: before,
-        },
-      }),
-    })
-      .limit(take + 1)
-      .sort("-timestamp -_id")
-      .select("-channel");
+    const { messages, nextMessageTimestamp } = await Message.getPaginated(
+      req.thisChannel,
+      req.query
+    );
 
     res.json({
-      messages: messages.slice(0, take),
+      messages,
       links: {
-        nextPage:
-          messages.length > take
-            ? `/channel/${req.thisChannel._id}/messages?before=${messages[
-                messages.length - 1
-              ].timestamp?.getTime()}`
-            : null,
+        nextPage: nextMessageTimestamp
+          ? `/channel/${req.thisChannel._id}/messages?before=${nextMessageTimestamp}`
+          : null,
       },
     });
   }),

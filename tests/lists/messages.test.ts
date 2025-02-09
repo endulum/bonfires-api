@@ -1,5 +1,5 @@
 import "../memoryServer";
-import { token } from "../helpers";
+import { logBody, token } from "../helpers";
 import { assertPagination } from "./listHelpers";
 import { wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
@@ -26,7 +26,7 @@ beforeAll(async () => {
 describe("GET /channel/:channel/messages", () => {
   beforeAll(async () => {
     await Message.insertMany(
-      Array(25)
+      Array(50)
         .fill({ user: admin, channel })
         .map((msg) => ({
           ...msg,
@@ -43,8 +43,8 @@ describe("GET /channel/:channel/messages", () => {
     await assertPagination({
       reqArgs: [`GET /channel/${channel._id}/messages`, adminToken],
       expectedProperty: "messages",
-      expectedTotal: 25,
-      expectedPerPage: 5,
+      expectedTotal: 50,
+      expectedPerPage: 15,
     });
   });
 });
