@@ -47,6 +47,19 @@ channelSchema.method("isInChannel", function (user: UserDocument) {
   );
 });
 
+channelSchema.method("getSettings", async function (user: UserDocument) {
+  let channelSettings = await ChannelSettings.findOne({
+    user,
+    channel: this,
+  });
+  if (!channelSettings)
+    channelSettings = await ChannelSettings.create({
+      user: user,
+      channel: this,
+    });
+  return channelSettings;
+});
+
 channelSchema.method("isAdmin", function (user: UserDocument) {
   return this.admin._id.toString() === user._id.toString();
 });

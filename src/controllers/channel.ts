@@ -4,7 +4,6 @@ import { body } from "express-validator";
 import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
 import * as user from "./user";
-import { ChannelSettings } from "../../mongoose/models/channelSettings";
 
 export const validation = [
   body("title")
@@ -47,21 +46,8 @@ export const isInChannel = [
   ...user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
-    if (
-      req.thisChannel.users.find(
-        (u) => u._id.toString() === req.user._id.toString()
-      ) !== undefined
-    ) {
-      let channelSettings = await ChannelSettings.findOne({
-        user: req.user,
-        channel: req.thisChannel,
-      });
-      if (!channelSettings)
-        channelSettings = await ChannelSettings.create({
-          user: req.user,
-          channel: req.thisChannel,
-        });
-      req.thisChannelSettings = channelSettings;
+    if (req.thisChannel.isInChannel(req.user)) {
+      req.thisChannelSettings = req.thisChannel.getSettings(req.user);
       return next();
     } else res.status(403).send("You are not in this channel.");
   }),

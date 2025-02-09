@@ -59,6 +59,7 @@ export type ChannelQueries = {
 
 export type ChannelMethods = {
   isInChannel: (this: ChannelDocument, ...args: any[]) => any;
+  getSettings: (this: ChannelDocument, ...args: any[]) => any;
   isAdmin: (this: ChannelDocument, ...args: any[]) => any;
   updateTitle: (this: ChannelDocument, ...args: any[]) => any;
   updateAdmin: (this: ChannelDocument, ...args: any[]) => any;
