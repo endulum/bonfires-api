@@ -1,5 +1,5 @@
 import "../memoryServer";
-import { logBody, token } from "../helpers";
+import { req, assertCode, token } from "../helpers";
 import { assertPagination } from "./listHelpers";
 import { wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
@@ -26,7 +26,7 @@ beforeAll(async () => {
 describe("GET /channel/:channel/messages", () => {
   beforeAll(async () => {
     await Message.insertMany(
-      Array(50)
+      Array(100)
         .fill({ user: admin, channel })
         .map((msg) => ({
           ...msg,
@@ -39,12 +39,37 @@ describe("GET /channel/:channel/messages", () => {
     );
   });
 
-  test("200 and shows paginated list of messages", async () => {
+  test("200 and shows max 30 messages by default", async () => {
+    const response = await req(
+      `GET /channel/${channel._id}/messages`,
+      adminToken
+    );
+    assertCode(response, 200);
+    expect(response.body.messages).toBeDefined();
+    expect(response.body.messages.length).toBe(30);
+    expect(
+      [...response.body.messages].sort(
+        (comm_a: { timestamp: string }, comm_b: { timestamp: string }) =>
+          Date.parse(comm_b.timestamp) - Date.parse(comm_a.timestamp)
+      )
+    ).toEqual(response.body.messages);
+  });
+
+  test("stable pagination", async () => {
     await assertPagination({
       reqArgs: [`GET /channel/${channel._id}/messages`, adminToken],
       expectedProperty: "messages",
-      expectedTotal: 50,
-      expectedPerPage: 15,
+      expectedTotal: 100,
+      expectedPerPage: 30,
+    });
+  });
+
+  test("preserves take", async () => {
+    await assertPagination({
+      reqArgs: [`GET /channel/${channel._id}/messages?take=10`, adminToken],
+      expectedProperty: "messages",
+      expectedTotal: 100,
+      expectedPerPage: 10,
     });
   });
 });

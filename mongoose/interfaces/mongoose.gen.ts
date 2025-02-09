@@ -19,6 +19,7 @@ export type Channel = {
   title: string;
   admin: User["_id"] | User;
   users: (User["_id"] | User)[];
+  lastActivity?: Date;
   _id: mongoose.Types.ObjectId;
 };
 
@@ -111,6 +112,7 @@ export type ChannelDocument = mongoose.Document<
     title: string;
     admin: UserDocument["_id"] | UserDocument;
     users: mongoose.Types.Array<UserDocument["_id"] | UserDocument>;
+    lastActivity?: Date;
     _id: mongoose.Types.ObjectId;
   };
 
@@ -269,7 +271,9 @@ export type MessageQueries = {};
 
 export type MessageMethods = {};
 
-export type MessageStatics = {};
+export type MessageStatics = {
+  getPaginated: (this: MessageModel, ...args: any[]) => any;
+};
 
 /**
  * Mongoose Model type

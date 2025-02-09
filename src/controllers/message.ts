@@ -31,16 +31,20 @@ export const create = [
 export const getForChannel = [
   ...channel.isInChannel,
   asyncHandler(async (req, res) => {
+    const take = parseInt((req.query.take as string) ?? "", 10) || 30;
+    const before = req.query.before;
+
     const { messages, nextMessageTimestamp } = await Message.getPaginated(
       req.thisChannel,
-      req.query
+      take,
+      before
     );
 
     res.json({
       messages,
       links: {
         nextPage: nextMessageTimestamp
-          ? `/channel/${req.thisChannel._id}/messages?before=${nextMessageTimestamp}`
+          ? `/channel/${req.thisChannel._id}/messages?before=${nextMessageTimestamp}&take=${take}`
           : null,
       },
     });

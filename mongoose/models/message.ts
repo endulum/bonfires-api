@@ -18,11 +18,9 @@ messageSchema.static(
   "getPaginated",
   async function (
     channel: ChannelDocument,
-    query: Record<string, string | undefined>
+    take: number = 30,
+    before?: string
   ) {
-    const take = parseInt(query.take ?? "", 10) || 15;
-    const before = query.before;
-
     const messages = await Message.find({
       channel,
       ...(before && {
