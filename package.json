@@ -7,7 +7,7 @@
     "envinit": "cp -n .env.example .env.production && cp -n .env.example .env.development && cp -n .env.example .env.test",
     "envinit:overwrite": "cp .env.example .env.production && cp .env.example .env.development && cp .env.example .env.test",
     "play": "npx nodemon _playground.ts",
-    "reset": "npx dotenv-cli -e .env.development -- npx nodemon ./mongoose/reset.ts",
+    "reset": "NODE_ENV=development npx dotenv-cli -e .env.development -- npx nodemon ./mongoose/reset.ts",
     "mtgen": "npx mtgen ./mongoose/models/ -o ./mongoose/interfaces/",
     "dev": "NODE_ENV=development nodemon --exec ts-node ./app.ts",
     "test": "NODE_ENV=test jest --runInBand --watch",
