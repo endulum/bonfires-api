@@ -14,6 +14,7 @@ const channelSchema: ChannelSchema = new Schema({
   admin: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
   lastActivity: { type: Date, default: () => Date.now() },
+  hasAvatar: { type: Boolean, required: true, default: false },
 });
 
 channelSchema.static(
@@ -122,6 +123,11 @@ channelSchema.method("invite", async function (users: UserDocument[]) {
   await ChannelSettings.insertMany(
     users.map((u) => ({ user: u, channel: this }))
   );
+});
+
+channelSchema.method("toggleHasAvatar", async function (hasAvatar: boolean) {
+  this.hasAvatar = hasAvatar;
+  await this.save();
 });
 
 channelSchema.pre("save", async function (next) {

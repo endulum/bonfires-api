@@ -41,11 +41,13 @@ if (process.env.NODE_ENV !== "test") {
     router
       .route("/avatar")
       .get(module.serveOwnAvatar)
-      .post(module.uploadUserAvatar);
+      .post(module.uploadUserAvatar)
+      .delete(module.removeOwnAvatar);
     router
       .route("/channel/:channel/avatar")
       .get(module.serveChannelAvatar)
-      .post(module.uploadChannelAvatar);
+      .post(module.uploadChannelAvatar)
+      .delete(module.removeChannelAvatar);
     router.route("/user/:user/avatar").get(module.serveUserAvatar);
   });
 }

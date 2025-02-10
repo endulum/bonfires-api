@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
 import { ofetch } from "ofetch";
+import { Readable } from "stream";
 
 const supabase = createClient(
   process.env.SUPABASE_URL ||
@@ -79,18 +80,35 @@ async function getSignedUrl(filePath: string) {
   return data.signedUrl;
 }
 
-export async function getBuffer(
+export async function getReadable(
   id: { channelId: string } | { userId: string }
-): Promise<Buffer> {
+): Promise<Readable | null> {
   const filePath = `${"channelId" in id ? "channelAvatars" : "userAvatars"}/${
     "channelId" in id ? id.channelId : id.userId
   }`;
-  const signedUrl = await getSignedUrl(filePath);
-  const response = await ofetch.raw(signedUrl, {
-    responseType: "arrayBuffer",
-  });
-  const buffer = response._data;
-  if (!buffer)
-    throw new Error("Error loading file from bucket: Buffer is empty.");
-  return Buffer.from(buffer);
+
+  try {
+    const signedUrl = await getSignedUrl(filePath);
+    const response = await ofetch.raw(signedUrl, {
+      responseType: "arrayBuffer",
+    });
+    const buffer = response._data;
+    if (!buffer)
+      throw new Error("Error loading file from bucket: Buffer is empty.");
+    const readable = Readable.from(Buffer.from(buffer));
+    return readable;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+export async function del(id: { channelId: string } | { userId: string }) {
+  const filePath = `${"channelId" in id ? "channelAvatars" : "userAvatars"}/${
+    "channelId" in id ? id.channelId : id.userId
+  }`;
+
+  const { error } = await supabase.storage.from(bucketName).remove([filePath]);
+
+  if (error) throw error;
 }

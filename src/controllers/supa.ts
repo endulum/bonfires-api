@@ -2,12 +2,12 @@ import asyncHandler from "express-async-handler";
 import { body } from "express-validator";
 import multer from "multer";
 import { filetypemime } from "magic-bytes.js";
-import { Readable } from "stream";
 
 import * as supabase from "../../supabase/client";
 import { isAdminOfChannel, isInChannel } from "./channel";
 import { exists, authenticate } from "./user";
 import { validate } from "../middleware/validate";
+import path from "path";
 
 const storage = multer.memoryStorage();
 const uploadMulter = multer({ storage });
@@ -49,6 +49,7 @@ export const uploadChannelAvatar = [
     await supabase.upload(req.file, {
       channelId: req.thisChannel._id.toString(),
     });
+    await req.thisChannel.toggleHasAvatar(true);
     res.sendStatus(200);
   }),
 ];
@@ -61,6 +62,7 @@ export const uploadUserAvatar = [
     await supabase.upload(req.file!, {
       userId: req.user._id.toString(),
     });
+    await req.user.toggleHasAvatar(true);
     res.sendStatus(200);
   }),
 ];
@@ -68,12 +70,20 @@ export const uploadUserAvatar = [
 export const serveChannelAvatar = [
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    const buffer = await supabase.getBuffer({
+    if (!req.thisChannel.hasAvatar) {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "camp.webp"));
+      return;
+    }
+
+    const readable = await supabase.getReadable({
       channelId: req.thisChannel._id.toString(),
     });
-    const readable = Readable.from(buffer);
-    res.set("Content-Type", "image/webp");
-    readable.pipe(res);
+    if (readable) {
+      res.set("Content-Type", "image/webp");
+      readable.pipe(res);
+    } else {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "camp.webp"));
+    }
   }),
 ];
 
@@ -81,23 +91,65 @@ export const serveUserAvatar = [
   ...authenticate,
   exists,
   asyncHandler(async (req, res) => {
-    const buffer = await supabase.getBuffer({
+    if (!req.thisUser.hasAvatar) {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+      return;
+    }
+
+    const readable = await supabase.getReadable({
       userId: req.thisUser._id.toString(),
     });
-    const readable = Readable.from(buffer);
-    res.set("Content-Type", "image/webp");
-    readable.pipe(res);
+    if (readable) {
+      res.set("Content-Type", "image/webp");
+      readable.pipe(res);
+    } else {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+    }
   }),
 ];
 
 export const serveOwnAvatar = [
   ...authenticate,
   asyncHandler(async (req, res) => {
-    const buffer = await supabase.getBuffer({
+    if (!req.user.hasAvatar) {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+      return;
+    }
+
+    const readable = await supabase.getReadable({
       userId: req.user._id.toString(),
     });
-    const readable = Readable.from(buffer);
-    res.set("Content-Type", "image/webp");
-    readable.pipe(res);
+    if (readable) {
+      res.set("Content-Type", "image/webp");
+      readable.pipe(res);
+    } else {
+      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+    }
+  }),
+];
+
+export const removeOwnAvatar = [
+  ...authenticate,
+  asyncHandler(async (req, res) => {
+    if (req.user.hasAvatar) {
+      await supabase.del({ userId: req.user._id.toString() });
+      await req.user.toggleHasAvatar(false);
+      res.sendStatus(200);
+    } else {
+      res.status(400).send("You have no avatar to remove.");
+    }
+  }),
+];
+
+export const removeChannelAvatar = [
+  ...isAdminOfChannel,
+  asyncHandler(async (req, res) => {
+    if (req.thisChannel.hasAvatar) {
+      await supabase.del({ channelId: req.thisChannel._id.toString() });
+      await req.thisChannel.toggleHasAvatar(false);
+      res.sendStatus(200);
+    } else {
+      res.status(400).send("This channel has no avatar to remove.");
+    }
   }),
 ];
