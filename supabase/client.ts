@@ -1,7 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { decode } from "base64-arraybuffer";
 import sharp from "sharp";
-import { filetypemime } from "magic-bytes.js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL ||
@@ -41,18 +39,17 @@ function sharedToNormal(buffer: SharedArrayBuffer) {
 export async function getWebpBuffer(
   file: Express.Multer.File
 ): Promise<ArrayBuffer> {
-  const mimetypes = filetypemime(file.buffer);
-  if (mimetypes.includes("image/webp")) {
-    const arrayBuffer = decode(file.buffer.toString("base64"));
-    return arrayBuffer;
-  } else {
-    const webpBuffer = await sharp(file.buffer, { animated: true })
-      .webp()
-      .toBuffer();
-    if (webpBuffer.buffer instanceof SharedArrayBuffer)
-      return sharedToNormal(webpBuffer.buffer);
-    else return webpBuffer.buffer;
-  }
+  const webpBuffer = await sharp(file.buffer, { animated: true })
+    .resize({
+      width: 128,
+      height: 128,
+      fit: "cover",
+    })
+    .webp()
+    .toBuffer();
+  if (webpBuffer.buffer instanceof SharedArrayBuffer)
+    return sharedToNormal(webpBuffer.buffer);
+  else return webpBuffer.buffer;
 }
 
 export async function upload(
