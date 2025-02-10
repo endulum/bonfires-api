@@ -36,4 +36,11 @@ router
   .get(message.getForChannel)
   .post(message.create);
 
+if (process.env.NODE_ENV !== "test") {
+  import("./controllers/supa").then((module) => {
+    router.route("/avatar").post(module.uploadUserAvatar);
+    router.route("/channel/:channel/avatar").post(module.uploadChannelAvatar);
+  });
+}
+
 export { router };
