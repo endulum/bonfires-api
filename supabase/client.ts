@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
+import { ofetch } from "ofetch";
 
 const supabase = createClient(
   process.env.SUPABASE_URL ||
@@ -18,7 +19,10 @@ const bucketName = `bonfires_${process.env.NODE_ENV}`;
 // if the buckets we're expecting don't exist
 async function checkBucket() {
   const { error } = await supabase.storage.getBucket(bucketName);
-  if (error) throw error;
+  if (error) {
+    console.warn(`error with bucket name: ${bucketName}`);
+    throw error;
+  }
 }
 
 checkBucket();
@@ -65,4 +69,28 @@ export async function upload(
     .from(bucketName)
     .upload(filePath, buffer, { contentType: "image/webp", upsert: true });
   if (error) throw error;
+}
+
+async function getSignedUrl(filePath: string) {
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .createSignedUrl(filePath, 30);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function getBuffer(
+  id: { channelId: string } | { userId: string }
+): Promise<Buffer> {
+  const filePath = `${"channelId" in id ? "channelAvatars" : "userAvatars"}/${
+    "channelId" in id ? id.channelId : id.userId
+  }`;
+  const signedUrl = await getSignedUrl(filePath);
+  const response = await ofetch.raw(signedUrl, {
+    responseType: "arrayBuffer",
+  });
+  const buffer = response._data;
+  if (!buffer)
+    throw new Error("Error loading file from bucket: Buffer is empty.");
+  return Buffer.from(buffer);
 }

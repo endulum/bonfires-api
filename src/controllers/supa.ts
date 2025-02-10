@@ -2,10 +2,11 @@ import asyncHandler from "express-async-handler";
 import { body } from "express-validator";
 import multer from "multer";
 import { filetypemime } from "magic-bytes.js";
+import { Readable } from "stream";
 
 import * as supabase from "../../supabase/client";
-import { isAdminOfChannel } from "./channel";
-import { authenticate } from "./user";
+import { isAdminOfChannel, isInChannel } from "./channel";
+import { exists, authenticate } from "./user";
 import { validate } from "../middleware/validate";
 
 const storage = multer.memoryStorage();
@@ -58,8 +59,45 @@ export const uploadUserAvatar = [
   asyncHandler(async (req, res) => {
     if (!req.file) throw new Error("No file is present.");
     await supabase.upload(req.file!, {
-      channelId: req.user._id.toString(),
+      userId: req.user._id.toString(),
     });
     res.sendStatus(200);
+  }),
+];
+
+export const serveChannelAvatar = [
+  ...isInChannel,
+  asyncHandler(async (req, res) => {
+    const buffer = await supabase.getBuffer({
+      channelId: req.thisChannel._id.toString(),
+    });
+    const readable = Readable.from(buffer);
+    res.set("Content-Type", "image/webp");
+    readable.pipe(res);
+  }),
+];
+
+export const serveUserAvatar = [
+  ...authenticate,
+  exists,
+  asyncHandler(async (req, res) => {
+    const buffer = await supabase.getBuffer({
+      userId: req.thisUser._id.toString(),
+    });
+    const readable = Readable.from(buffer);
+    res.set("Content-Type", "image/webp");
+    readable.pipe(res);
+  }),
+];
+
+export const serveOwnAvatar = [
+  ...authenticate,
+  asyncHandler(async (req, res) => {
+    const buffer = await supabase.getBuffer({
+      userId: req.user._id.toString(),
+    });
+    const readable = Readable.from(buffer);
+    res.set("Content-Type", "image/webp");
+    readable.pipe(res);
   }),
 ];
