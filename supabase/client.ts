@@ -3,6 +3,8 @@ import sharp from "sharp";
 import { ofetch } from "ofetch";
 import { Readable } from "stream";
 
+import * as redis from "../redis/client";
+
 const supabase = createClient(
   process.env.SUPABASE_URL ||
     (function () {
@@ -80,6 +82,26 @@ async function getSignedUrl(filePath: string) {
   return data.signedUrl;
 }
 
+async function getBuffer(filePath: string) {
+  // try getting buffer from redis first
+  const redisBuffer = await redis.findCachedFile(filePath);
+  if (redisBuffer) return redisBuffer;
+
+  // then get buffer from fetch
+  const signedUrl = await getSignedUrl(filePath);
+  const response = await ofetch.raw(signedUrl, {
+    responseType: "arrayBuffer",
+  });
+  const supabaseBuffer = response._data;
+  if (!supabaseBuffer)
+    throw new Error("Error loading file from bucket: Buffer is empty.");
+
+  const buffer = Buffer.from(supabaseBuffer);
+  // store this buffer in redis before returning it
+  await redis.addCachedFile(filePath, buffer);
+  return buffer;
+}
+
 export async function getReadable(
   id: { channelId: string } | { userId: string }
 ): Promise<Readable | null> {
@@ -88,13 +110,7 @@ export async function getReadable(
   }`;
 
   try {
-    const signedUrl = await getSignedUrl(filePath);
-    const response = await ofetch.raw(signedUrl, {
-      responseType: "arrayBuffer",
-    });
-    const buffer = response._data;
-    if (!buffer)
-      throw new Error("Error loading file from bucket: Buffer is empty.");
+    const buffer = await getBuffer(filePath);
     const readable = Readable.from(Buffer.from(buffer));
     return readable;
   } catch (e) {
