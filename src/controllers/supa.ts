@@ -12,6 +12,10 @@ import path from "path";
 const storage = multer.memoryStorage();
 const uploadMulter = multer({ storage });
 
+function getNumberFromId(id: string) {
+  return (parseInt(id.slice(-1), 16) % 5) + 1;
+}
+
 const uploadValidation = [
   uploadMulter.single("upload"),
   body("upload").custom(async (_value, { req }) => {
@@ -103,7 +107,15 @@ export const serveUserAvatar = [
       res.set("Content-Type", "image/webp");
       readable.pipe(res);
     } else {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+      res.sendFile(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "assets",
+          `user-${getNumberFromId(req.thisUser._id.toString())}.webp`
+        )
+      );
     }
   }),
 ];
@@ -112,7 +124,15 @@ export const serveOwnAvatar = [
   ...authenticate,
   asyncHandler(async (req, res) => {
     if (!req.user.hasAvatar) {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+      res.sendFile(
+        path.join(
+          __dirname,
+          "..",
+          "..",
+          "assets",
+          `user-${getNumberFromId(req.user._id.toString())}.webp`
+        )
+      );
       return;
     }
 
