@@ -115,8 +115,8 @@ const exchangeCodeForToken = async (code: string) => {
     {
       method: "get",
       params: {
-        client_id: process.env.GH_CLIENT_ID,
-        client_secret: process.env.GH_SECRET,
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_SECRET,
         redirect_uri: `${process.env.FRONTEND_URL}/github`,
         code,
       },
