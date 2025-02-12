@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/favicon.ico", (_req, res) => res.status(204).end());
 
 // in dev, log method and given values
-if (process.env.ENV === "development") {
+if (process.env.NODE_ENV === "development") {
   app.use(logger("dev"));
   app.use(
     asyncHandler(async (req, _res, next) => {
