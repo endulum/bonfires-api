@@ -147,7 +147,7 @@ export const github = asyncHandler(async (req, res) => {
 
   let username = "";
   let id: Types.ObjectId | null = null;
-  const existingUser = await User.findOne({ ghId: githubUser._id });
+  const existingUser = await User.findOne({ ghId: githubUser.id });
   if (existingUser) {
     username = existingUser.username;
     id = existingUser._id;
@@ -155,7 +155,7 @@ export const github = asyncHandler(async (req, res) => {
   } else {
     const newUser = await User.create({
       username: githubUser.login,
-      ghId: githubUser._id,
+      ghId: githubUser.id,
       ghUser: githubUser.login,
     });
     username = githubUser.login;
