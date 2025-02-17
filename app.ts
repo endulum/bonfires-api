@@ -3,6 +3,7 @@ import express from "express";
 import asyncHandler from "express-async-handler";
 import cors from "cors";
 import logger from "morgan";
+import multer from "multer";
 
 import { errorHandler } from "./src/middleware/errorHandler";
 import { router } from "./src/router";
@@ -14,11 +15,14 @@ console.warn(`environment: ${process.env.NODE_ENV}`);
 import "./mongoose/connectionClient";
 
 const app = express();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(upload.single("upload"));
 
 // suppress favicon request
 app.get("/favicon.ico", (_req, res) => res.status(204).end());
@@ -37,10 +41,6 @@ if (process.env.NODE_ENV === "development") {
       next();
     })
   );
-  app.use(async (_req, _res, next) => {
-    setTimeout(next, 750);
-    // artificial delay to test visual loading in frontend
-  });
 }
 
 app.use(router);

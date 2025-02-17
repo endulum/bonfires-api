@@ -40,7 +40,7 @@ export function bulkUsers(count: number): BulkUserData[] {
 export function bulkChannels(count: number): BulkChannelData[] {
   const channels: BulkChannelData[] = [];
   while (channels.length < count) {
-    const title = faker.company.name();
+    const title = faker.food.dish();
     if (title.length > 64) continue;
     channels.push({ title });
   }

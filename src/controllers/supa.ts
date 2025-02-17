@@ -1,23 +1,18 @@
 import asyncHandler from "express-async-handler";
 import { body } from "express-validator";
-import multer from "multer";
 import { filetypemime } from "magic-bytes.js";
 
 import * as supabase from "../../supabase/client";
-import { isAdminOfChannel, isInChannel } from "./channel";
-import { exists, authenticate } from "./user";
+import { isAdminOfChannel, exists as channelExists } from "./channel";
+import { exists as userExists, authenticate } from "./user";
 import { validate } from "../middleware/validate";
 import path from "path";
-
-const storage = multer.memoryStorage();
-const uploadMulter = multer({ storage });
 
 function getNumberFromId(id: string) {
   return (parseInt(id.slice(-1), 16) % 5) + 1;
 }
 
 const uploadValidation = [
-  uploadMulter.single("upload"),
   body("upload").custom(async (_value, { req }) => {
     if (!req.file) throw new Error("Please upload a file.");
     if (req.file.size > 5242880) {
@@ -72,10 +67,17 @@ export const uploadUserAvatar = [
 ];
 
 export const serveChannelAvatar = [
-  ...isInChannel,
+  channelExists,
   asyncHandler(async (req, res) => {
+    const defaultAvatarPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "assets",
+      "camp.webp"
+    );
     if (!req.thisChannel.hasAvatar) {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "camp.webp"));
+      res.sendFile(defaultAvatarPath);
       return;
     }
 
@@ -84,19 +86,26 @@ export const serveChannelAvatar = [
     });
     if (readable) {
       res.set("Content-Type", "image/webp");
+      res.set("Cache-Control", "max-age=120");
       readable.pipe(res);
     } else {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "camp.webp"));
+      res.sendFile(defaultAvatarPath);
     }
   }),
 ];
 
 export const serveUserAvatar = [
-  ...authenticate,
-  exists,
+  userExists,
   asyncHandler(async (req, res) => {
+    const defaultAvatarPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "assets",
+      `user-${getNumberFromId(req.thisUser._id.toString())}.webp`
+    );
     if (!req.thisUser.hasAvatar) {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
+      res.sendFile(defaultAvatarPath);
       return;
     }
 
@@ -105,71 +114,10 @@ export const serveUserAvatar = [
     });
     if (readable) {
       res.set("Content-Type", "image/webp");
+      res.set("Cache-Control", "max-age=120");
       readable.pipe(res);
     } else {
-      res.sendFile(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "assets",
-          `user-${getNumberFromId(req.thisUser._id.toString())}.webp`
-        )
-      );
-    }
-  }),
-];
-
-export const serveOwnAvatar = [
-  ...authenticate,
-  asyncHandler(async (req, res) => {
-    if (!req.user.hasAvatar) {
-      res.sendFile(
-        path.join(
-          __dirname,
-          "..",
-          "..",
-          "assets",
-          `user-${getNumberFromId(req.user._id.toString())}.webp`
-        )
-      );
-      return;
-    }
-
-    const readable = await supabase.getReadable({
-      userId: req.user._id.toString(),
-    });
-    if (readable) {
-      res.set("Content-Type", "image/webp");
-      readable.pipe(res);
-    } else {
-      res.sendFile(path.join(__dirname, "..", "..", "assets", "user-1.webp"));
-    }
-  }),
-];
-
-export const removeOwnAvatar = [
-  ...authenticate,
-  asyncHandler(async (req, res) => {
-    if (req.user.hasAvatar) {
-      await supabase.del({ userId: req.user._id.toString() });
-      await req.user.toggleHasAvatar(false);
-      res.sendStatus(200);
-    } else {
-      res.status(400).send("You have no avatar to remove.");
-    }
-  }),
-];
-
-export const removeChannelAvatar = [
-  ...isAdminOfChannel,
-  asyncHandler(async (req, res) => {
-    if (req.thisChannel.hasAvatar) {
-      await supabase.del({ channelId: req.thisChannel._id.toString() });
-      await req.thisChannel.toggleHasAvatar(false);
-      res.sendStatus(200);
-    } else {
-      res.status(400).send("This channel has no avatar to remove.");
+      res.sendFile(defaultAvatarPath);
     }
   }),
 ];

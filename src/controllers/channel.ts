@@ -94,6 +94,7 @@ export const get = [
   asyncHandler(async (req, res) => {
     res.json(
       await Channel.findOne()
+        .byId(req.thisChannel._id)
         .withUsersAndSettings(req.thisChannel._id)
         .populate({ path: "admin", select: "id username" })
     );

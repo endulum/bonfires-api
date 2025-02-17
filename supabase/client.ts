@@ -63,15 +63,16 @@ export async function upload(
   file: Express.Multer.File,
   id: { channelId: string } | { userId: string }
 ) {
-  const buffer = await getWebpBuffer(file);
+  const arrayBuffer = await getWebpBuffer(file);
 
   const filePath = `${"channelId" in id ? "channelAvatars" : "userAvatars"}/${
     "channelId" in id ? id.channelId : id.userId
   }`;
   const { error } = await supabase.storage
     .from(bucketName)
-    .upload(filePath, buffer, { contentType: "image/webp", upsert: true });
+    .upload(filePath, arrayBuffer, { contentType: "image/webp", upsert: true });
   if (error) throw error;
+  redis.addCachedFile(filePath, Buffer.from(arrayBuffer));
 }
 
 async function getSignedUrl(filePath: string) {
@@ -111,7 +112,7 @@ export async function getReadable(
 
   try {
     const buffer = await getBuffer(filePath);
-    const readable = Readable.from(Buffer.from(buffer));
+    const readable = Readable.from(buffer);
     return readable;
   } catch (e) {
     console.error(e);

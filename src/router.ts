@@ -38,16 +38,11 @@ router
 
 if (process.env.NODE_ENV !== "test") {
   import("./controllers/supa").then((module) => {
-    router
-      .route("/avatar")
-      .get(module.serveOwnAvatar)
-      .post(module.uploadUserAvatar)
-      .delete(module.removeOwnAvatar);
+    router.route("/avatar").post(module.uploadUserAvatar);
     router
       .route("/channel/:channel/avatar")
       .get(module.serveChannelAvatar)
-      .post(module.uploadChannelAvatar)
-      .delete(module.removeChannelAvatar);
+      .post(module.uploadChannelAvatar);
     router.route("/user/:user/avatar").get(module.serveUserAvatar);
   });
 }

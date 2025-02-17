@@ -1,12 +1,18 @@
 import "./connectionClient";
-import { wipeWithAdmin } from "./dev";
-import { token } from "../tests/helpers";
-import { empty } from "../supabase/client";
+import * as dev from "./dev";
+import { empty as emptyBucket } from "../supabase/client";
 
 async function main() {
-  await empty();
-  await wipeWithAdmin();
-  console.log(await token("admin"));
+  await emptyBucket();
+  const admin = await dev.wipeWithAdmin();
+
+  await dev.inviteUsersToChannels(
+    await dev.createBulkUsers(50),
+    await dev.createBulkChannels(10, [admin]),
+    10
+  );
+
+  console.warn("finished");
 }
 
 main().catch((e) => console.error(e));

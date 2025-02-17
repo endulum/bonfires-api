@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 
 import { User } from "./models/user";
-import { UserSettings } from "./models/userSettings";
 import { Channel } from "./models/channel";
-import { ChannelSettings } from "./models/channelSettings";
-import { Message } from "./models/message";
 
 import * as fakes from "./fakes";
 import { ChannelDocument, UserDocument } from "./interfaces/mongoose.gen";
@@ -50,6 +47,7 @@ export async function createBulkChannels(
       const channel = await Channel.create({
         admin: admins[Math.floor(Math.random() * admins.length)],
         title: cd.title,
+        lastActivity: fakes.randDate(),
       });
       channels.push(channel);
     })
@@ -57,10 +55,20 @@ export async function createBulkChannels(
   return channels;
 }
 
-export async function addUsersToChannels(
-  users: { _id: string }[],
-  channel: ChannelDocument
+export async function inviteUsersToChannels(
+  users: UserDocument[],
+  channels: ChannelDocument[],
+  maxUsersPer?: number
 ) {
-  await channel.users.push(...users);
-  await channel.save();
+  await Promise.all(
+    channels.map(async (channel) => {
+      const memberCount = maxUsersPer
+        ? Math.floor(Math.random() * maxUsersPer)
+        : users.length;
+      if (memberCount > 0)
+        await channel.invite([
+          ...users.sort(() => 0.5 - Math.random()).slice(0, memberCount),
+        ]);
+    })
+  );
 }
