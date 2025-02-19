@@ -3,7 +3,7 @@ import { body } from "express-validator";
 import { filetypemime } from "magic-bytes.js";
 
 import * as supabase from "../../supabase/client";
-import { isAdminOfChannel, exists as channelExists } from "./channel";
+import { exists as channelExists } from "./channel";
 import { exists as userExists, authenticate } from "./user";
 import { validate } from "../middleware/validate";
 import path from "path";
@@ -41,14 +41,13 @@ const uploadValidation = [
 ];
 
 export const uploadChannelAvatar = [
-  ...isAdminOfChannel,
   ...uploadValidation,
   asyncHandler(async (req, res) => {
     if (!req.file) throw new Error("No file is present.");
     await supabase.upload(req.file, {
       channelId: req.thisChannel._id.toString(),
     });
-    await req.thisChannel.toggleHasAvatar(true);
+    await req.thisChannel.updateAvatar(req.thisUser);
     res.sendStatus(200);
   }),
 ];

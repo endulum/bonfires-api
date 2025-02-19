@@ -26,7 +26,7 @@ describe("atomicity", () => {
   beforeAll(async () => {
     users.push(...(await createBulkUsers(10)));
     channel = await Channel.create({
-      admin,
+      owner: admin,
       title: "It's A Channel",
     });
   });
@@ -59,7 +59,7 @@ describe("atomicity", () => {
 describe("population", () => {
   beforeAll(async () => {
     channel = await Channel.create({
-      admin,
+      owner: admin,
       title: "It's A Channel",
     });
     await channel.invite(users);

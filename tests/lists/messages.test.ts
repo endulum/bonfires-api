@@ -18,7 +18,7 @@ beforeAll(async () => {
   admin = await wipeWithAdmin();
   adminToken = await token("admin");
   channel = await Channel.create({
-    admin,
+    owner: admin,
     title: "It's A Channel",
   });
 });

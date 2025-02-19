@@ -34,15 +34,17 @@ eventSchema.static(
   "getForChannel",
   async function (
     channel: ChannelDocument,
-    beginTimestamp: Date,
+    beginTimestamp?: Date,
     endTimestamp?: Date
   ) {
     const events = await Event.find({
       channel,
-      timestamp: {
-        $lte: beginTimestamp,
-        ...(endTimestamp && { $gte: endTimestamp }),
-      },
+      ...((beginTimestamp || endTimestamp) && {
+        timestamp: {
+          ...(beginTimestamp && { $lte: beginTimestamp }),
+          ...(endTimestamp && { $gte: endTimestamp }),
+        },
+      }),
     })
       .sort("-timestamp -_id")
       .select("-channel");

@@ -386,7 +386,9 @@ export type MessageQuery = mongoose.Query<
  *
  * This type represents `MessageSchema.query`. For most use cases, you should not need to use this type explicitly.
  */
-export type MessageQueries = {};
+export type MessageQueries = {
+  byId: (this: MessageQuery, ...args: any[]) => MessageQuery;
+};
 
 export type MessageMethods = {
   pin: (this: MessageDocument, ...args: any[]) => any;
@@ -394,6 +396,7 @@ export type MessageMethods = {
 
 export type MessageStatics = {
   getPaginatedForChannel: (this: MessageModel, ...args: any[]) => any;
+  getPinnedForChannel: (this: MessageModel, ...args: any[]) => any;
 };
 
 /**

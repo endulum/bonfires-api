@@ -10,7 +10,7 @@ const router = express.Router();
 // auth
 router.route("/login").post(user.deserialize, auth.login);
 router.route("/signup").post(user.deserialize, auth.signup);
-router.route("/github").get(auth.github);
+router.route("/github").get(user.deserialize, auth.github);
 
 // user
 router.route("/me").get(user.me).put(user.edit);
@@ -27,7 +27,6 @@ router
 router.route("/channel/:channel/leave").post(channel.leave);
 router.route("/channel/:channel/invite/:user").post(channel.invite);
 router.route("/channel/:channel/kick/:user").post(channel.kick);
-router.route("/channel/:channel/promote/:user").post(channel.promote);
 router.route("/channel/:channel/settings").put(channel.editSettings);
 
 // message
@@ -35,6 +34,8 @@ router
   .route("/channel/:channel/messages")
   .get(message.getForChannel)
   .post(message.create);
+router.route("/channel/:channel/pins").get(message.getPinned);
+router.route("/channel/:channel/message/:message/pin").put(message.pin);
 
 if (process.env.NODE_ENV !== "test") {
   import("./controllers/supa").then((module) => {

@@ -136,34 +136,37 @@ const fetchGithubUser = async (accessToken: string) => {
   return data;
 };
 
-export const github = asyncHandler(async (req, res) => {
-  const { code } = req.query as Record<string, string | null>;
-  if (!code || code === "undefined") {
-    res.status(400).send("No code is provided.");
-    return;
-  }
-  const accessToken = await exchangeCodeForToken(code);
-  const githubUser = await fetchGithubUser(accessToken);
+export const github = [
+  isNotLoggedIn,
+  asyncHandler(async (req, res) => {
+    const { code } = req.query as Record<string, string | null>;
+    if (!code || code === "undefined") {
+      res.status(400).send("No code is provided.");
+      return;
+    }
+    const accessToken = await exchangeCodeForToken(code);
+    const githubUser = await fetchGithubUser(accessToken);
 
-  let username = "";
-  let id: Types.ObjectId | null = null;
-  const existingUser = await User.findOne({ ghId: githubUser.id });
-  if (existingUser) {
-    username = existingUser.username;
-    id = existingUser._id;
-    await existingUser.updateGitHubUser(githubUser.login);
-  } else {
-    const newUser = await User.create({
-      username: githubUser.login,
-      ghId: githubUser.id,
-      ghUser: githubUser.login,
-    });
-    username = githubUser.login;
-    id = newUser._id;
-  }
+    let username = "";
+    let id: Types.ObjectId | null = null;
+    const existingUser = await User.findOne({ ghId: githubUser.id });
+    if (existingUser) {
+      username = existingUser.username;
+      id = existingUser._id;
+      await existingUser.updateGitHubUser(githubUser.login);
+    } else {
+      const newUser = await User.create({
+        username: githubUser.login,
+        ghId: githubUser.id,
+        ghUser: githubUser.login,
+      });
+      username = githubUser.login;
+      id = newUser._id;
+    }
 
-  if (id !== null)
-    res.json({
-      token: await signToken(id, username),
-    });
-});
+    if (id !== null)
+      res.json({
+        token: await signToken(id, username),
+      });
+  }),
+];

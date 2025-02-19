@@ -12,12 +12,8 @@ export const getAll = [
     const before = req.query.before;
     const title = req.query.title;
 
-    const { channels, nextChannelTimestamp } = await Channel.getPaginated(
-      req.user,
-      take,
-      title,
-      before
-    );
+    const { channels, nextChannelTimestamp } =
+      await Channel.getPaginatedForUser(req.user, take, title, before);
 
     res.json({
       channels,
@@ -50,7 +46,7 @@ export const create = [
   asyncHandler(async (req, res) => {
     const channel = await Channel.create({
       title: req.body.title,
-      admin: req.user,
+      owner: req.user,
     });
     res.json({ _id: channel._id });
   }),
@@ -60,7 +56,7 @@ export const exists = asyncHandler(async (req, res, next) => {
   const channel = await Channel.findOne()
     .byId(req.params.channel)
     .populate([
-      { path: "admin", select: "id username" },
+      { path: "owner", select: "id username" },
       { path: "users", select: "id username" },
     ]);
   if (!channel) res.status(404).send("Channel could not be found.");
@@ -75,17 +71,19 @@ export const isInChannel = [
   exists,
   asyncHandler(async (req, res, next) => {
     if (req.thisChannel.isInChannel(req.user)) {
-      req.thisChannelSettings = await req.thisChannel.getSettings(req.user);
+      req.thisChannelSettings = await req.thisChannel.getSettingsForUser(
+        req.user
+      );
       return next();
     } else res.status(403).send("You are not in this channel.");
   }),
 ];
 
-export const isAdminOfChannel = [
+export const isOwnerOfChannel = [
   ...isInChannel,
   asyncHandler(async (req, res, next) => {
-    if (req.thisChannel.isAdmin(req.user)) return next();
-    else res.status(403).send("You are not the admin of this channel.");
+    if (req.thisChannel.isOwner(req.user)) return next();
+    else res.status(403).send("You are not the owner of this channel.");
   }),
 ];
 
@@ -96,17 +94,18 @@ export const get = [
       await Channel.findOne()
         .byId(req.thisChannel._id)
         .withUsersAndSettings(req.thisChannel._id)
-        .populate({ path: "admin", select: "id username" })
+        .populate({ path: "owner", select: "id username" })
     );
   }),
 ];
 
 export const edit = [
-  ...isAdminOfChannel,
+  ...isInChannel,
   ...validation,
   validate,
   asyncHandler(async (req, res) => {
-    await req.thisChannel.updateTitle(req.body.title);
+    if (req.body.title)
+      await req.thisChannel.updateTitle(req.body.title, req.user);
     res.sendStatus(200);
   }),
 ];
@@ -137,7 +136,7 @@ export const editSettings = [
 ];
 
 export const del = [
-  ...isAdminOfChannel,
+  ...isOwnerOfChannel,
   body("title")
     .trim()
     .notEmpty()
@@ -164,24 +163,10 @@ export const getMutual = [
 ];
 
 export const leave = [
-  ...user.authenticate,
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    if (req.thisChannel.isAdmin(req.user)) {
-      if (req.thisChannel.users.length > 1) {
-        res
-          .status(403)
-          .send(
-            "You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving."
-          );
-      } else {
-        await Channel.deleteOne({ _id: req.thisChannel._id });
-        res.sendStatus(200);
-      }
-    } else {
-      await req.thisChannel.kick([req.user]);
-      res.sendStatus(200);
-    }
+    await req.thisChannel.kick([req.user]);
+    res.sendStatus(200);
   }),
 ];
 
@@ -199,28 +184,13 @@ export const invite = [
 ];
 
 export const kick = [
-  ...isAdminOfChannel,
+  ...isOwnerOfChannel,
   user.exists,
   asyncHandler(async (req, res) => {
     if (!req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is not in this channel.");
     else {
-      await req.thisChannel.kick([req.thisUser]);
-      res.sendStatus(200);
-    }
-  }),
-];
-
-export const promote = [
-  ...isAdminOfChannel,
-  user.exists,
-  asyncHandler(async (req, res) => {
-    if (req.thisChannel.isAdmin(req.thisUser))
-      res.status(400).send("You cannot promote yourself.");
-    else if (!req.thisChannel.isInChannel(req.thisUser))
-      res.status(400).send("This user is not in this channel.");
-    else {
-      await req.thisChannel.updateAdmin(req.thisUser);
+      await req.thisChannel.kick([req.thisUser], req.user);
       res.sendStatus(200);
     }
   }),

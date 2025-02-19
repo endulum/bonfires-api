@@ -47,18 +47,39 @@ messageSchema.static(
   }
 );
 
+messageSchema.static(
+  "getPinnedForChannel",
+  async function (channel: ChannelDocument) {
+    const pinnedMessages = await Message.find({
+      channel,
+      pinned: true,
+    })
+      .sort("-timestamp -_id")
+      .select("-channel");
+
+    return pinnedMessages;
+  }
+);
+
+// this is to avoid 500's if the :message param isn't an id
+messageSchema.query.byId = function (id: string) {
+  if (mongoose.isValidObjectId(id)) return this.where({ _id: id });
+  return this.where({ _id: undefined });
+};
+
 messageSchema.method(
   "pin",
   async function (pinned: boolean, user: UserDocument) {
     this.pinned = pinned;
     await this.save();
 
-    await Event.create({
-      type: "message_pin",
-      channel: this.channel,
-      user,
-      targetMessage: this,
-    });
+    if (pinned === true)
+      await Event.create({
+        type: "message_pin",
+        channel: this.channel,
+        user,
+        targetMessage: this,
+      });
   }
 );
 

@@ -21,7 +21,7 @@ describe("GET /channels", () => {
     users.push(...(await createBulkUsers(2)));
     const channels = await Channel.insertMany(
       Array(channelCount)
-        .fill({ admin })
+        .fill({ owner: admin })
         .map((c) => ({
           ...c,
           title: faker.book.title(),

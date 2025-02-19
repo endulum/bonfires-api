@@ -59,51 +59,51 @@ describe("GET /user/:user/mutual", () => {
 
 describe("POST /channel/:channel/leave", () => {
   let channel: ChannelDocument;
-  let user: UserDocument;
+  const users: UserDocument[] = [];
 
   beforeAll(async () => {
     admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
-      admin,
+      owner: admin,
       title: "It's A Channel",
     });
-    user = (await createBulkUsers(1))[0];
-    await channel.invite([user]);
-  });
-
-  test("403 if leaving a channel as admin", async () => {
-    const response = await req(
-      `POST /channel/${channel._id}/leave`,
-      adminToken
-    );
-    assertCode(
-      response,
-      403,
-      "You cannot leave a channel if you are its admin and there are other users in the channel. Please promote one of the other users of this channel to admin before leaving."
-    );
+    users.push(...(await createBulkUsers(2)));
+    await channel.invite(users);
+    // channel should have three users - two bulks and one owner
   });
 
   test("200 and leaves a channel", async () => {
     let response = await req(
       `POST /channel/${channel._id}/leave`,
-      await token(user.username)
+      await token(users[0].username)
     );
     assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`, adminToken);
-    expect(response.body.users.length).toBe(1);
-  });
-
-  /* test("403 if leaving a channel you were never in", async () => {
-    const response = await req(
-      `POST /channel/${channel._id}/leave`,
-      await token(user.username)
+    response = await req(
+      `GET /channel/${channel._id}`,
+      await token(users[0].username)
     );
     assertCode(response, 403);
-  }); */ // move to permissions?
+    response = await req(`GET /channel/${channel._id}`, adminToken);
+    expect(response.body.users.length).toBe(2);
+  });
+
+  test("200 and if owner leaves channel, next oldest user becomes owner", async () => {
+    let response = await req(`POST /channel/${channel._id}/leave`, adminToken);
+    assertCode(response, 200);
+    response = await req(
+      `GET /channel/${channel._id}`,
+      await token(users[1].username)
+    );
+    expect(response.body.users.length).toBe(1);
+    expect(response.body.owner._id).toEqual(users[1]._id.toString());
+  });
 
   test("200 and deletes channel if you were the last member", async () => {
-    let response = await req(`POST /channel/${channel._id}/leave`, adminToken);
+    let response = await req(
+      `POST /channel/${channel._id}/leave`,
+      await token(users[1].username)
+    );
     assertCode(response, 200);
     response = await req(`GET /channel/${channel._id}`, adminToken);
     assertCode(response, 404);
@@ -118,7 +118,7 @@ describe("POST /channel/:channel/invite/:user", () => {
     admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
-      admin,
+      owner: admin,
       title: "It's A Channel",
     });
     users.push(...(await createBulkUsers(2)));
@@ -152,7 +152,7 @@ describe("POST /channel/:channel/kick/:user", () => {
     admin = await wipeWithAdmin();
     adminToken = await token("admin");
     channel = await Channel.create({
-      admin,
+      owner: admin,
       title: "It's A Channel",
     });
     users.push(...(await createBulkUsers(2)));
@@ -175,47 +175,5 @@ describe("POST /channel/:channel/kick/:user", () => {
     assertCode(response, 200);
     response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.users.length).toBe(1);
-  });
-});
-
-describe("POST /channel/:channel/promote/:user", () => {
-  let channel: ChannelDocument;
-  const users: UserDocument[] = [];
-
-  beforeAll(async () => {
-    admin = await wipeWithAdmin();
-    adminToken = await token("admin");
-    channel = await Channel.create({
-      admin,
-      title: "It's A Channel",
-    });
-    users.push(...(await createBulkUsers(2)));
-    await channel.invite([users[0]]);
-  });
-
-  test("400 if user is not in channel", async () => {
-    const response = await req(
-      `POST /channel/${channel._id}/promote/${users[1]._id}`,
-      adminToken
-    );
-    assertCode(response, 400, "This user is not in this channel.");
-  });
-
-  test("400 if trying to promote self", async () => {
-    const response = await req(
-      `POST /channel/${channel._id}/promote/${admin._id}`,
-      adminToken
-    );
-    assertCode(response, 400, "You cannot promote yourself.");
-  });
-
-  test("200 and replaces admin", async () => {
-    let response = await req(
-      `POST /channel/${channel._id}/promote/${users[0]._id}`,
-      adminToken
-    );
-    assertCode(response, 200);
-    response = await req(`GET /channel/${channel._id}`, adminToken);
-    expect(response.body.admin._id).toBe(users[0]._id.toString());
   });
 });

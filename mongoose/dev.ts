@@ -38,14 +38,14 @@ export async function createBulkUsers(count: number) {
 
 export async function createBulkChannels(
   count: number,
-  admins: UserDocument[]
+  owners: UserDocument[]
 ) {
   const channelData = fakes.bulkChannels(count);
   const channels: ChannelDocument[] = [];
   await Promise.all(
     channelData.map(async (cd) => {
       const channel = await Channel.create({
-        admin: admins[Math.floor(Math.random() * admins.length)],
+        owner: owners[Math.floor(Math.random() * owners.length)],
         title: cd.title,
         lastActivity: fakes.randDate(),
       });

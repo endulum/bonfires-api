@@ -1,6 +1,7 @@
 import {
   ChannelDocument,
   ChannelSettingsDocument,
+  MessageDocument,
   UserDocument,
 } from "../mongoose/interfaces/mongoose.gen";
 import { PopulatedDocument } from "../mongoose/interfaces/mongoose.gen";
@@ -16,6 +17,7 @@ declare global {
         "users"
       >;
       thisChannelSettings: ChannelSettingsDocument;
+      thisMessage: MessageDocument;
     }
   }
 }

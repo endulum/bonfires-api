@@ -10,12 +10,13 @@ import {
 let adminToken: string = "";
 let admin: UserDocument;
 let channel: ChannelDocument;
+let messageId: string;
 
 beforeAll(async () => {
   admin = await wipeWithAdmin();
   adminToken = await token("admin");
   channel = await Channel.create({
-    admin,
+    owner: admin,
     title: "It's A Channel",
   });
 });
@@ -40,9 +41,48 @@ describe("POST /channel/:channel/messages", () => {
       correctInputs
     );
     assertCode(response, 200);
+    messageId = response.body._id;
     const timestamp = response.body.timestamp;
 
     response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.lastActivity).toEqual(timestamp);
+  });
+});
+
+describe("POST /channel/:channel/message/:message/pin", () => {
+  test("400 if unpinning an unpinned message", async () => {
+    const response = await req(
+      `PUT /channel/${channel._id}/message/${messageId}/pin`,
+      adminToken,
+      { pin: "false" }
+    );
+    assertCode(response, 400, "This message was never pinned.");
+  });
+
+  test("200 and pins", async () => {
+    const response = await req(
+      `PUT /channel/${channel._id}/message/${messageId}/pin`,
+      adminToken,
+      { pin: "true" }
+    );
+    assertCode(response, 200);
+  });
+
+  test("400 if pinning a pinned message", async () => {
+    const response = await req(
+      `PUT /channel/${channel._id}/message/${messageId}/pin`,
+      adminToken,
+      { pin: "true" }
+    );
+    assertCode(response, 400, "This message is already pinned.");
+  });
+
+  test("200 and unpins", async () => {
+    const response = await req(
+      `PUT /channel/${channel._id}/message/${messageId}/pin`,
+      adminToken,
+      { pin: "false" }
+    );
+    assertCode(response, 200);
   });
 });
