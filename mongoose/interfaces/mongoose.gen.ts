@@ -17,7 +17,7 @@ import mongoose from "mongoose";
  */
 export type Channel = {
   title: string;
-  admin: User["_id"] | User;
+  owner: User["_id"] | User;
   users: (User["_id"] | User)[];
   lastActivity?: Date;
   hasAvatar: boolean;
@@ -60,18 +60,17 @@ export type ChannelQueries = {
 };
 
 export type ChannelMethods = {
+  isOwner: (this: ChannelDocument, ...args: any[]) => any;
   isInChannel: (this: ChannelDocument, ...args: any[]) => any;
-  getSettings: (this: ChannelDocument, ...args: any[]) => any;
-  isAdmin: (this: ChannelDocument, ...args: any[]) => any;
+  getSettingsForUser: (this: ChannelDocument, ...args: any[]) => any;
   updateTitle: (this: ChannelDocument, ...args: any[]) => any;
-  updateAdmin: (this: ChannelDocument, ...args: any[]) => any;
+  updateAvatar: (this: ChannelDocument, ...args: any[]) => any;
   kick: (this: ChannelDocument, ...args: any[]) => any;
   invite: (this: ChannelDocument, ...args: any[]) => any;
-  toggleHasAvatar: (this: ChannelDocument, ...args: any[]) => any;
 };
 
 export type ChannelStatics = {
-  getPaginated: (this: ChannelModel, ...args: any[]) => any;
+  getPaginatedForUser: (this: ChannelModel, ...args: any[]) => any;
 };
 
 /**
@@ -114,7 +113,7 @@ export type ChannelDocument = mongoose.Document<
 > &
   ChannelMethods & {
     title: string;
-    admin: UserDocument["_id"] | UserDocument;
+    owner: UserDocument["_id"] | UserDocument;
     users: mongoose.Types.Array<UserDocument["_id"] | UserDocument>;
     lastActivity?: Date;
     hasAvatar: boolean;
@@ -227,6 +226,120 @@ export type ChannelSettingsDocument = mongoose.Document<
   };
 
 /**
+ * Lean version of EventDocument
+ *
+ * This has all Mongoose getters & functions removed. This type will be returned from `EventDocument.toObject()`. To avoid conflicts with model names, use the type alias `EventObject`.
+ * ```
+ * const eventObject = event.toObject();
+ * ```
+ */
+export type Event = {
+  type?:
+    | "user_invite"
+    | "user_leave"
+    | "user_kick"
+    | "message_pin"
+    | "channel_avatar"
+    | "channel_title";
+  channel?: mongoose.Types.ObjectId;
+  user?: mongoose.Types.ObjectId;
+  timestamp?: Date;
+  targetUser?: mongoose.Types.ObjectId;
+  targetMessage?: mongoose.Types.ObjectId;
+  newChannelTitle?: string;
+  _id: mongoose.Types.ObjectId;
+};
+
+/**
+ * Lean version of EventDocument (type alias of `Event`)
+ *
+ * Use this type alias to avoid conflicts with model names:
+ * ```
+ * import { Event } from "../models"
+ * import { EventObject } from "../interfaces/mongoose.gen.ts"
+ *
+ * const eventObject: EventObject = event.toObject();
+ * ```
+ */
+export type EventObject = Event;
+
+/**
+ * Mongoose Query type
+ *
+ * This type is returned from query functions. For most use cases, you should not need to use this type explicitly.
+ */
+export type EventQuery = mongoose.Query<any, EventDocument, EventQueries> &
+  EventQueries;
+
+/**
+ * Mongoose Query helper types
+ *
+ * This type represents `EventSchema.query`. For most use cases, you should not need to use this type explicitly.
+ */
+export type EventQueries = {};
+
+export type EventMethods = {};
+
+export type EventStatics = {
+  getForChannel: (this: EventModel, ...args: any[]) => any;
+};
+
+/**
+ * Mongoose Model type
+ *
+ * Pass this type to the Mongoose Model constructor:
+ * ```
+ * const Event = mongoose.model<EventDocument, EventModel>("Event", EventSchema);
+ * ```
+ */
+export type EventModel = mongoose.Model<EventDocument, EventQueries> &
+  EventStatics;
+
+/**
+ * Mongoose Schema type
+ *
+ * Assign this type to new Event schema instances:
+ * ```
+ * const EventSchema: EventSchema = new mongoose.Schema({ ... })
+ * ```
+ */
+export type EventSchema = mongoose.Schema<
+  EventDocument,
+  EventModel,
+  EventMethods,
+  EventQueries
+>;
+
+/**
+ * Mongoose Document type
+ *
+ * Pass this type to the Mongoose Model constructor:
+ * ```
+ * const Event = mongoose.model<EventDocument, EventModel>("Event", EventSchema);
+ * ```
+ */
+export type EventDocument = mongoose.Document<
+  mongoose.Types.ObjectId,
+  EventQueries
+> &
+  EventMethods & {
+    type?:
+      | "user_invite"
+      | "user_leave"
+      | "user_kick"
+      | "message_pin"
+      | "channel_avatar"
+      | "channel_title";
+    channel?: mongoose.Types.ObjectId;
+    user?: mongoose.Types.ObjectId;
+    timestamp?: Date;
+    targetUser?: mongoose.Types.ObjectId;
+    targetMessage?: mongoose.Types.ObjectId;
+    newChannelTitle?: string;
+    _id: mongoose.Types.ObjectId;
+  };
+
+/**
  * Lean version of MessageDocument
  *
  * This has all Mongoose getters & functions removed. This type will be returned from `MessageDocument.toObject()`. To avoid conflicts with model names, use the type alias `MessageObject`.
@@ -239,6 +352,7 @@ export type Message = {
   user: Channel["_id"] | Channel;
   timestamp?: Date;
   content: string;
+  pinned?: boolean;
   _id: mongoose.Types.ObjectId;
 };
 
@@ -274,10 +388,12 @@ export type MessageQuery = mongoose.Query<
  */
 export type MessageQueries = {};
 
-export type MessageMethods = {};
+export type MessageMethods = {
+  pin: (this: MessageDocument, ...args: any[]) => any;
+};
 
 export type MessageStatics = {
-  getPaginated: (this: MessageModel, ...args: any[]) => any;
+  getPaginatedForChannel: (this: MessageModel, ...args: any[]) => any;
 };
 
 /**
@@ -323,6 +439,7 @@ export type MessageDocument = mongoose.Document<
     user: ChannelDocument["_id"] | ChannelDocument;
     timestamp?: Date;
     content: string;
+    pinned?: boolean;
     _id: mongoose.Types.ObjectId;
   };
 

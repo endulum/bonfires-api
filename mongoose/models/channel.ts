@@ -8,17 +8,18 @@ import {
 } from "../interfaces/mongoose.gen";
 import { ChannelSettings } from "./channelSettings";
 import { Message } from "./message";
+import { Event } from "./event";
 
 const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
-  admin: { type: Schema.ObjectId, ref: "User", required: true },
+  owner: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
   lastActivity: { type: Date, default: () => Date.now() },
   hasAvatar: { type: Boolean, required: true, default: false },
 });
 
 channelSchema.static(
-  "getPaginated",
+  "getPaginatedForUser",
   async function (
     user: UserDocument,
     take: number = 15,
@@ -75,6 +76,10 @@ channelSchema.query.withUsersAndSettings = function (id: Types.ObjectId) {
   });
 };
 
+channelSchema.method("isOwner", function (user: UserDocument) {
+  return this.owner._id.toString() === user._id.toString();
+});
+
 channelSchema.method("isInChannel", function (user: UserDocument) {
   return (
     this.users.find((u) => u._id.toString() === user._id.toString()) !==
@@ -82,7 +87,7 @@ channelSchema.method("isInChannel", function (user: UserDocument) {
   );
 });
 
-channelSchema.method("getSettings", async function (user: UserDocument) {
+channelSchema.method("getSettingsForUser", async function (user: UserDocument) {
   let channelSettings = await ChannelSettings.findOne({
     user,
     channel: this,
@@ -95,54 +100,118 @@ channelSchema.method("getSettings", async function (user: UserDocument) {
   return channelSettings;
 });
 
-channelSchema.method("isAdmin", function (user: UserDocument) {
-  return this.admin._id.toString() === user._id.toString();
-});
+channelSchema.method(
+  "updateTitle",
+  async function (newTitle: string, user: UserDocument) {
+    this.title = newTitle;
+    await this.save();
 
-channelSchema.method("updateTitle", async function (newTitle: string) {
-  this.title = newTitle;
-  await this.save();
-});
+    await Event.create({
+      type: "channel_title",
+      channel: this,
+      user,
+      newChannelTitle: newTitle,
+    });
+  }
+);
 
-channelSchema.method("updateAdmin", async function (user: UserDocument) {
-  this.admin = user;
-  await this.save();
-});
+channelSchema.method("updateAvatar", async function (user: UserDocument) {
+  if (!this.hasAvatar) {
+    this.hasAvatar = true;
+    await this.save();
+  }
 
-channelSchema.method("kick", async function (users: UserDocument[]) {
-  this.users.pull(...users);
-  await this.save();
-  await ChannelSettings.deleteMany({
-    $and: [{ channel: this }, { user: { $in: users } }],
+  await Event.create({
+    type: "channel_avatar",
+    channel: this,
+    user,
   });
 });
 
-channelSchema.method("invite", async function (users: UserDocument[]) {
-  this.users.push(...users);
-  await this.save();
-  await ChannelSettings.insertMany(
-    users.map((u) => ({ user: u, channel: this }))
-  );
-});
+channelSchema.method(
+  "kick",
+  async function (users: UserDocument[], kicker?: UserDocument) {
+    this.users.pull(...users);
+    await this.save();
 
-channelSchema.method("toggleHasAvatar", async function (hasAvatar: boolean) {
-  this.hasAvatar = hasAvatar;
-  await this.save();
-});
+    // if there is nobody left, delete self
+    if (this.users.length === 0) {
+      await Channel.deleteOne({ _id: this._id });
+      return;
+    }
+
+    // if one of the people that left was the owner, the next user in the array is now the owner
+    if (
+      users.find((u) => u._id.toString() === this.owner._id.toString()) !==
+      undefined
+    ) {
+      this.owner = this.users[0];
+      await this.save();
+    }
+
+    // remove channel settings since users are no longer participants
+    await ChannelSettings.deleteMany({
+      $and: [{ channel: this }, { user: { $in: users } }],
+    });
+
+    // add "__ removed __ from this channel" event for each person that left
+    await Event.insertMany(
+      users.map((u) =>
+        kicker
+          ? {
+              // if a kicker was provided, this is a kick event
+              type: "user_kick",
+              channel: this,
+              user: kicker,
+              targetUser: u,
+            }
+          : {
+              // if no kicker was provided, this is a leave event
+              type: "user_leave",
+              channel: this,
+              user: u,
+            }
+      )
+    );
+  }
+);
+
+channelSchema.method(
+  "invite",
+  async function (users: UserDocument[], invitor: UserDocument) {
+    this.users.push(...users);
+    await this.save();
+
+    // add channel settings for new participants
+    await ChannelSettings.insertMany(
+      users.map((u) => ({ user: u, channel: this }))
+    );
+
+    // add "__ added __ to this channel" event for each invitee
+    await Event.insertMany(
+      users.map((u) => ({
+        type: "user_invite",
+        channel: this,
+        user: invitor,
+        targetUser: u,
+      }))
+    );
+  }
+);
 
 channelSchema.pre("save", async function (next) {
   if (this.isNew) {
     // make sure the admin is included in the users array and gets own settings
-    this.users.push(this.admin);
+    this.users.push(this.owner);
     await ChannelSettings.create({
-      user: this.admin,
+      user: this.owner,
       channel: this,
     });
   }
   return next();
 });
 
-// remove associated messages and ChannelSettings documents
+// remove associated Message, ChannelSettings, and Event documents
 channelSchema.pre("deleteOne", async function (next) {
   // deleteOne is a query hook, not a document hook,
   // and i can't change this to a "findOneAndDelete" hook
@@ -150,9 +219,12 @@ channelSchema.pre("deleteOne", async function (next) {
   // it will simply not run if `document` is set to true.
   // this is a workaround to still get the id from `this`
   if ("_conditions" in this) {
-    const id = (this["_conditions"] as { _id: mongoose.Types.ObjectId })["_id"];
-    await Message.deleteMany({ channel: id });
-    await ChannelSettings.deleteMany({ channel: id });
+    const channel = (this["_conditions"] as { _id: mongoose.Types.ObjectId })[
+      "_id"
+    ];
+    await Message.deleteMany({ channel });
+    await ChannelSettings.deleteMany({ channel });
+    await Event.deleteMany({ channel });
   }
   return next();
 });
