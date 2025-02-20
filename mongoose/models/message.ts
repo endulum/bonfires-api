@@ -11,8 +11,8 @@ import { Channel } from "./channel";
 import { Event } from "./event";
 
 const messageSchema: MessageSchema = new Schema({
-  channel: { type: Schema.ObjectId, ref: "User", required: true },
-  user: { type: Schema.ObjectId, ref: "Channel", required: true },
+  channel: { type: Schema.ObjectId, ref: "Channel", required: true },
+  user: { type: Schema.ObjectId, ref: "User", required: true },
   timestamp: { type: Date, default: () => Date.now(), immutable: true },
   content: { type: String, required: true },
   pinned: { type: Boolean, default: false },
@@ -35,6 +35,7 @@ messageSchema.static(
     })
       .limit(take + 1)
       .sort("-timestamp -_id")
+      .populate("user", "_id username")
       .select("-channel");
 
     return {
