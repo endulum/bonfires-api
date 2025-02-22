@@ -60,6 +60,7 @@ export type ChannelQueries = {
 };
 
 export type ChannelMethods = {
+  getUserWithSettings: (this: ChannelDocument, ...args: any[]) => any;
   isOwner: (this: ChannelDocument, ...args: any[]) => any;
   isInChannel: (this: ChannelDocument, ...args: any[]) => any;
   getSettingsForUser: (this: ChannelDocument, ...args: any[]) => any;
@@ -348,8 +349,8 @@ export type EventDocument = mongoose.Document<
  * ```
  */
 export type Message = {
-  channel: User["_id"] | User;
-  user: Channel["_id"] | Channel;
+  channel: Channel["_id"] | Channel;
+  user: User["_id"] | User;
   timestamp?: Date;
   content: string;
   pinned?: boolean;
@@ -438,8 +439,8 @@ export type MessageDocument = mongoose.Document<
   MessageQueries
 > &
   MessageMethods & {
-    channel: UserDocument["_id"] | UserDocument;
-    user: ChannelDocument["_id"] | ChannelDocument;
+    channel: ChannelDocument["_id"] | ChannelDocument;
+    user: UserDocument["_id"] | UserDocument;
     timestamp?: Date;
     content: string;
     pinned?: boolean;
@@ -566,7 +567,8 @@ export type UserDocument = mongoose.Document<
  * ```
  */
 export type UserSettings = {
-  defaultNameColor: string;
+  user: User["_id"] | User;
+  defaultNameColor?: string;
   defaultInvisible: boolean;
   _id: mongoose.Types.ObjectId;
 };
@@ -649,7 +651,8 @@ export type UserSettingsDocument = mongoose.Document<
   UserSettingsQueries
 > &
   UserSettingsMethods & {
-    defaultNameColor: string;
+    user: UserDocument["_id"] | UserDocument;
+    defaultNameColor?: string;
     defaultInvisible: boolean;
     _id: mongoose.Types.ObjectId;
   };

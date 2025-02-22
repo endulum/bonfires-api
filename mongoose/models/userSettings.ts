@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 
 import {
   UserSettingsDocument,
@@ -7,11 +7,10 @@ import {
 } from "../interfaces/mongoose.gen";
 
 const userSettingsSchema: UserSettingsSchema = new Schema({
+  user: { type: Types.ObjectId, ref: "User", required: true },
   defaultNameColor: {
     type: String,
-    required: true,
     match: /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i,
-    default: "#ffffff",
   },
   defaultInvisible: { type: Boolean, required: true, default: false },
 });

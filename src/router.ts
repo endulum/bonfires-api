@@ -25,8 +25,12 @@ router
   .put(channel.edit)
   .delete(channel.del);
 router.route("/channel/:channel/leave").post(channel.leave);
-router.route("/channel/:channel/invite/:user").post(channel.invite);
-router.route("/channel/:channel/kick/:user").post(channel.kick);
+router
+  .route(["/channel/:channel/invite/:user", "/channel/:channel/invite"])
+  .post(channel.invite);
+router
+  .route(["/channel/:channel/kick/:user", "/channel/:channel/kick"])
+  .post(channel.kick);
 router.route("/channel/:channel/settings").put(channel.editSettings);
 
 // message

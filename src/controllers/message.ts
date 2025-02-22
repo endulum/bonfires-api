@@ -22,7 +22,7 @@ export const create = [
   asyncHandler(async (req, res) => {
     const message = await Message.create({
       user: req.user,
-      channel: req.thisChannel,
+      channel: req.thisChannel._id,
       content: req.body.content,
     });
     res.json(message);

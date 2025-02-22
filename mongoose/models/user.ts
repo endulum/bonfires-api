@@ -96,7 +96,7 @@ userSchema.method("toggleHasAvatar", async function (hasAvatar: boolean) {
 userSchema.pre("save", async function (next) {
   // create UserSettings object if User is new
   if (this.isNew) {
-    const settings = await UserSettings.create({});
+    const settings = await UserSettings.create({ user: this });
     this.settings = settings._id;
   }
   // hash incoming new password

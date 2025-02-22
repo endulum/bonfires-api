@@ -4,6 +4,7 @@ import { body } from "express-validator";
 import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
 import * as user from "./user";
+import { User } from "../../mongoose/models/user";
 
 export const getAll = [
   ...user.authenticate,
@@ -131,7 +132,7 @@ export const editSettings = [
   validate,
   asyncHandler(async (req, res) => {
     await req.thisChannelSettings.update(req.body);
-    res.sendStatus(200);
+    res.json(await req.thisChannel.getUserWithSettings(req.user._id));
   }),
 ];
 
@@ -170,22 +171,47 @@ export const leave = [
   }),
 ];
 
+const userExistsForm = body("username")
+  .trim()
+  .notEmpty()
+  .withMessage("Please input a username.")
+  .bail()
+  .custom(async (value, { req }) => {
+    const user = await User.findOne()
+      .byNameOrId(value)
+      .select("-__v")
+      .populate({
+        path: "settings",
+        select: "-_id -__v",
+      });
+    if (!user) throw new Error("User could not be found.");
+    req.thisUser = user;
+    return true;
+  });
+
+const useReqOrForm = asyncHandler(async (req, res, next) => {
+  if (req.params.user) return user.exists(req, res, next);
+  return userExistsForm(req, res, next);
+});
+
 export const invite = [
   ...isInChannel,
-  user.exists,
+  useReqOrForm,
+  validate,
   asyncHandler(async (req, res) => {
     if (req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is already in this channel.");
     else {
       await req.thisChannel.invite([req.thisUser]);
-      res.sendStatus(200);
+      res.json(await req.thisChannel.getUserWithSettings(req.thisUser._id));
     }
   }),
 ];
 
 export const kick = [
   ...isOwnerOfChannel,
-  user.exists,
+  useReqOrForm,
+  validate,
   asyncHandler(async (req, res) => {
     if (!req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is not in this channel.");

@@ -9,6 +9,7 @@ import {
 import { ChannelSettings } from "./channelSettings";
 import { Message } from "./message";
 import { Event } from "./event";
+import { User } from "./user";
 
 const channelSchema: ChannelSchema = new Schema({
   title: { type: String, required: true },
@@ -60,21 +61,41 @@ channelSchema.query.byId = function (id: string) {
 channelSchema.query.withUsersAndSettings = function (id: Types.ObjectId) {
   return this.populate({
     path: "users",
-    select: ["username"],
+    select: ["username", "status"],
     populate: [
       {
         path: "channelSettings",
         model: "ChannelSettings",
         match: { channel: id },
-        select: ["displayName", "nameColor", "-_id", "-user"],
+        select: ["displayName", "nameColor", "invisible", "-_id", "-user"],
       },
       {
         path: "settings",
-        select: ["defaultNameColor", "-_id"],
+        select: ["defaultNameColor", "defaultInvisible", "-_id"],
       },
     ],
   });
 };
+
+channelSchema.method(
+  "getUserWithSettings",
+  async function (_id: Types.ObjectId) {
+    return User.findOne({
+      _id,
+    }).populate([
+      {
+        path: "channelSettings",
+        model: "ChannelSettings",
+        match: { channel: this },
+        select: ["displayName", "nameColor", "invisible", "-_id", "-user"],
+      },
+      {
+        path: "settings",
+        select: ["defaultNameColor", "defaultInvisible", "-_id"],
+      },
+    ]);
+  }
+);
 
 channelSchema.method("isOwner", function (user: UserDocument) {
   return this.owner._id.toString() === user._id.toString();
