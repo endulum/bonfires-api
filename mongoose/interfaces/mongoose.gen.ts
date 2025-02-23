@@ -242,8 +242,8 @@ export type Event = {
     | "message_pin"
     | "channel_avatar"
     | "channel_title";
-  channel?: mongoose.Types.ObjectId;
-  user?: mongoose.Types.ObjectId;
+  channel: Channel["_id"] | Channel;
+  user: User["_id"] | User;
   timestamp?: Date;
   targetUser?: mongoose.Types.ObjectId;
   targetMessage?: mongoose.Types.ObjectId;
@@ -331,8 +331,8 @@ export type EventDocument = mongoose.Document<
       | "message_pin"
       | "channel_avatar"
       | "channel_title";
-    channel?: mongoose.Types.ObjectId;
-    user?: mongoose.Types.ObjectId;
+    channel: ChannelDocument["_id"] | ChannelDocument;
+    user: UserDocument["_id"] | UserDocument;
     timestamp?: Date;
     targetUser?: mongoose.Types.ObjectId;
     targetMessage?: mongoose.Types.ObjectId;
@@ -655,7 +655,6 @@ export type UserSettingsDocument = mongoose.Document<
     defaultNameColor?: string;
     defaultInvisible: boolean;
     _id: mongoose.Types.ObjectId;
-    username: any;
   };
 
 /**

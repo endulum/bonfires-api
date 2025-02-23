@@ -20,8 +20,8 @@ const eventSchema: EventSchema = new Schema({
       "channel_title", // user-1 changed the camp name: 'new name' -
     ],
   },
-  channel: { type: Types.ObjectId },
-  user: { type: Types.ObjectId },
+  channel: { type: Types.ObjectId, ref: "Channel", required: true },
+  user: { type: Types.ObjectId, ref: "User", required: true },
   timestamp: { type: Date, default: () => Date.now(), immutable: true },
   targetUser: { type: Types.ObjectId, required: false },
   targetMessage: { type: Types.ObjectId, required: false },
@@ -47,7 +47,18 @@ eventSchema.static(
       }),
     })
       .sort("-timestamp -_id")
-      .select("-channel");
+      .populate([
+        {
+          path: "user",
+          model: "User",
+          select: ["username", "_id"],
+        },
+        {
+          path: "targetUser",
+          model: "User",
+          select: ["username", "_id"],
+        },
+      ]);
     return events;
   }
 );
