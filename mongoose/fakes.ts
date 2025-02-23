@@ -1,48 +1,40 @@
 import { faker } from "@faker-js/faker";
 
-export type BulkUserData = {
-  username: string;
-  status: string;
-};
-
-export type BulkChannelData = {
-  title: string;
-};
-
 export function randDate() {
   return faker.date.recent({ days: 7 });
 }
 
-export function bulkUsers(count: number): BulkUserData[] {
-  const usernames: string[] = [];
-  while (usernames.length < count) {
-    const username = faker.color
-      .human()
-      .split(" ")
-      .join("-")
-      .concat("-")
-      .concat(faker.animal.type().split(" ").join("-"));
-    if (usernames.includes(username) || username.length > 32) continue;
-    usernames.push(username);
-  }
-
+export function bulkUsers(count: number) {
   const users: Array<{
     username: string;
     status: string;
-  }> = usernames.map((username) => ({
-    username,
-    status: faker.person.bio(),
-  }));
-
+    defaultNameColor?: string;
+  }> = faker.helpers
+    .uniqueArray(
+      () =>
+        faker.helpers
+          .slugify(faker.color.human().concat(" ").concat(faker.animal.type()))
+          .substring(0, 32),
+      count
+    )
+    .map((u) => {
+      const color = faker.helpers.maybe(faker.color.rgb, {
+        probability: 0.75,
+      });
+      return {
+        username: u,
+        status: faker.person.bio(),
+        ...(typeof color === "string" && { defaultNameColor: color }),
+      };
+    });
   return users;
 }
 
-export function bulkChannels(count: number): BulkChannelData[] {
-  const channels: BulkChannelData[] = [];
-  while (channels.length < count) {
-    const title = faker.food.dish();
-    if (title.length > 64) continue;
-    channels.push({ title });
-  }
+export function bulkChannels(count: number) {
+  const channels: Array<{
+    title: string;
+  }> = faker.helpers
+    .uniqueArray(faker.food.dish, count)
+    .map((c) => ({ title: c.substring(0, 32) }));
   return channels;
 }

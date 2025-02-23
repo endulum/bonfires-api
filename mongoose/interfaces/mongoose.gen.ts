@@ -655,6 +655,7 @@ export type UserSettingsDocument = mongoose.Document<
     defaultNameColor?: string;
     defaultInvisible: boolean;
     _id: mongoose.Types.ObjectId;
+    username: any;
   };
 
 /**

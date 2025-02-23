@@ -4,7 +4,10 @@ import { User } from "./models/user";
 import { Channel } from "./models/channel";
 
 import * as fakes from "./fakes";
+import { faker } from "@faker-js/faker";
 import { ChannelDocument, UserDocument } from "./interfaces/mongoose.gen";
+import { UserSettings } from "./models/userSettings";
+import { Message } from "./models/message";
 
 export async function wipe() {
   await Promise.all(
@@ -21,42 +24,48 @@ export async function wipeWithAdmin() {
 }
 
 export async function createBulkUsers(count: number) {
-  const userData = fakes.bulkUsers(count);
-  const users: UserDocument[] = [];
-  await Promise.all(
-    userData.map(async (ud) => {
-      const user = await User.create({
-        username: ud.username,
-        status: ud.status,
-        password: "password",
-      });
-      users.push(user);
-    })
+  const bulkUsers = fakes.bulkUsers(count);
+  const users = await User.create(
+    bulkUsers.map((u) => ({
+      username: u.username,
+      status: u.status,
+    }))
   );
+
+  await UserSettings.bulkWrite(
+    bulkUsers
+      .filter((user) => user.defaultNameColor)
+      .map((user) => {
+        const { _id } = users.find((u) => u.username === user.username)!;
+        return {
+          updateOne: {
+            filter: { user: _id },
+            update: { $set: { defaultNameColor: user.defaultNameColor } },
+          },
+        };
+      })
+  );
+
   return users;
 }
 
 export async function createBulkChannels(
   count: number,
-  owners: UserDocument[]
+  ownerPool: UserDocument[]
 ) {
-  const channelData = fakes.bulkChannels(count);
-  const channels: ChannelDocument[] = [];
-  await Promise.all(
-    channelData.map(async (cd) => {
-      const channel = await Channel.create({
-        owner: owners[Math.floor(Math.random() * owners.length)],
-        title: cd.title,
-        lastActivity: fakes.randDate(),
-      });
-      channels.push(channel);
-    })
+  const bulkChannels = fakes.bulkChannels(count);
+  const channels = await Channel.create(
+    bulkChannels.map((c) => ({
+      owner: ownerPool[Math.floor(Math.random() * ownerPool.length)],
+      title: c.title,
+      lastActivity: fakes.randDate(),
+    }))
   );
   return channels;
 }
 
 export async function inviteUsersToChannels(
-  users: UserDocument[],
+  userPool: UserDocument[],
   channels: ChannelDocument[],
   maxUsersPer?: number
 ) {
@@ -64,11 +73,28 @@ export async function inviteUsersToChannels(
     channels.map(async (channel) => {
       const memberCount = maxUsersPer
         ? Math.floor(Math.random() * maxUsersPer)
-        : users.length;
+        : userPool.length;
       if (memberCount > 0)
         await channel.invite([
-          ...users.sort(() => 0.5 - Math.random()).slice(0, memberCount),
+          ...userPool.sort(() => 0.5 - Math.random()).slice(0, memberCount),
         ]);
     })
   );
+}
+
+export async function createBulkMessages(
+  channel: ChannelDocument,
+  count: number
+) {
+  const bulkMessages = faker.helpers.uniqueArray(faker.lorem.sentence, count);
+  const users = await User.find({ _id: { $in: channel.users } });
+  const messages = await Message.create(
+    bulkMessages.map((m) => ({
+      channel: channel._id,
+      user: users[Math.floor(Math.random() * users.length)]._id,
+      content: m,
+      timestamp: fakes.randDate(),
+    }))
+  );
+  return messages;
 }

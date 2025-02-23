@@ -12,7 +12,7 @@ import { Event } from "./event";
 import { User } from "./user";
 
 const channelSchema: ChannelSchema = new Schema({
-  title: { type: String, required: true },
+  title: { type: String, required: true, maxlength: 32, minLength: 2 },
   owner: { type: Schema.ObjectId, ref: "User", required: true },
   users: [{ type: Schema.ObjectId, ref: "User", required: true }],
   lastActivity: { type: Date, default: () => Date.now() },

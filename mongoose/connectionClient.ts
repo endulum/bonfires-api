@@ -6,3 +6,10 @@ mongoose.connect(
       throw new Error("Mongo URI is not defined.");
     })()
 );
+
+export async function close() {
+  console.warn("closing connection");
+  if (mongoose.connection !== null) {
+    await mongoose.connection.close();
+  }
+}

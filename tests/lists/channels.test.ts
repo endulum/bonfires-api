@@ -1,10 +1,12 @@
 import "../memoryServer";
 import { assertCode, req, token } from "../helpers";
 import { assertPagination } from "./listHelpers";
-import { createBulkUsers, wipeWithAdmin } from "../../mongoose/dev";
-import { Channel } from "../../mongoose/models/channel";
+import {
+  createBulkUsers,
+  createBulkChannels,
+  wipeWithAdmin,
+} from "../../mongoose/dev";
 import { UserDocument } from "../../mongoose/interfaces/mongoose.gen";
-import { faker } from "@faker-js/faker";
 
 let adminToken: string = "";
 let admin: UserDocument;
@@ -19,19 +21,7 @@ beforeAll(async () => {
 describe("GET /channels", () => {
   beforeAll(async () => {
     users.push(...(await createBulkUsers(2)));
-    const channels = await Channel.insertMany(
-      Array(channelCount)
-        .fill({ owner: admin })
-        .map((c) => ({
-          ...c,
-          title: faker.book.title(),
-          users: [admin],
-          lastActivity: faker.date.between({
-            from: "2020-01-01T00:00:00.000Z",
-            to: "2025-01-01T00:00:00.000Z",
-          }),
-        }))
-    );
+    const channels = await createBulkChannels(50, [admin]);
     await Promise.all(
       channels.slice(0, channelCount / 2).map(async (channel) => {
         await channel.invite([users[0]]);

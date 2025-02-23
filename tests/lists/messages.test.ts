@@ -1,14 +1,12 @@
 import "../memoryServer";
 import { req, assertCode, token } from "../helpers";
 import { assertPagination } from "./listHelpers";
-import { wipeWithAdmin } from "../../mongoose/dev";
+import { wipeWithAdmin, createBulkMessages } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
   ChannelDocument,
   UserDocument,
 } from "../../mongoose/interfaces/mongoose.gen";
-import { Message } from "../../mongoose/models/message";
-import { faker } from "@faker-js/faker";
 
 let adminToken: string = "";
 let admin: UserDocument;
@@ -25,18 +23,7 @@ beforeAll(async () => {
 
 describe("GET /channel/:channel/messages", () => {
   beforeAll(async () => {
-    await Message.insertMany(
-      Array(100)
-        .fill({ user: admin, channel })
-        .map((msg) => ({
-          ...msg,
-          content: faker.lorem.sentence(),
-          timestamp: faker.date.between({
-            from: "2020-01-01T00:00:00.000Z",
-            to: "2025-01-01T00:00:00.000Z",
-          }),
-        }))
-    );
+    await createBulkMessages(channel, 100);
   });
 
   test("200 and shows max 30 messages by default", async () => {
