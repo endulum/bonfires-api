@@ -5,6 +5,7 @@ import {
   UserDocument,
 } from "../mongoose/interfaces/mongoose.gen";
 import { PopulatedDocument } from "../mongoose/interfaces/mongoose.gen";
+import { type Server } from "socket.io";
 
 declare global {
   namespace Express {
@@ -18,6 +19,7 @@ declare global {
       >;
       thisChannelSettings: ChannelSettingsDocument;
       thisMessage: MessageDocument;
+      io: Server;
     }
   }
 }
