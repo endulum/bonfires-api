@@ -202,7 +202,7 @@ export const invite = [
     if (req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is already in this channel.");
     else {
-      await req.thisChannel.invite([req.thisUser]);
+      await req.thisChannel.invite([req.thisUser], req.user);
       res.json(await req.thisChannel.getUserWithSettings(req.thisUser._id));
     }
   }),
