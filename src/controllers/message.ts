@@ -20,11 +20,14 @@ export const create = [
   validation,
   validate,
   asyncHandler(async (req, res) => {
-    const message = await Message.create({
+    const { _id } = await Message.create({
       user: req.user,
       channel: req.thisChannel._id,
       content: req.body.content,
     });
+    const message = await Message.findById(_id)
+      .populate("user", "_id username")
+      .select("-channel");
     res.json(message);
   }),
 ];
