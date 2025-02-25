@@ -48,7 +48,7 @@ export const uploadChannelAvatar = [
     await supabase.upload(req.file, {
       channelId: req.thisChannel._id.toString(),
     });
-    await req.thisChannel.updateAvatar(req.thisUser);
+    await req.thisChannel.updateAvatar(req.user);
     res.sendStatus(200);
   }),
 ];
