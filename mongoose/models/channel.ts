@@ -209,14 +209,15 @@ channelSchema.method(
     );
 
     // add "__ added __ to this channel" event for each invitee
-    await Event.insertMany(
-      users.map((u) => ({
-        type: "user_invite",
-        channel: this,
-        user: invitor,
-        targetUser: u,
-      }))
-    );
+    if (invitor)
+      await Event.insertMany(
+        users.map((u) => ({
+          type: "user_invite",
+          channel: this,
+          user: invitor,
+          targetUser: u,
+        }))
+      );
   }
 );
 
