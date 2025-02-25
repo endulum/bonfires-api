@@ -43,10 +43,8 @@ function sharedToNormal(buffer: SharedArrayBuffer) {
   return arrayBuffer;
 }
 
-export async function getWebpBuffer(
-  file: Express.Multer.File
-): Promise<ArrayBuffer> {
-  const webpBuffer = await sharp(file.buffer, { animated: true })
+export async function getWebpBuffer(buffer: Buffer): Promise<ArrayBuffer> {
+  const webpBuffer = await sharp(buffer, { animated: true })
     .resize({
       width: 128,
       height: 128,
@@ -63,7 +61,7 @@ export async function upload(
   file: Express.Multer.File,
   id: { channelId: string } | { userId: string }
 ) {
-  const arrayBuffer = await getWebpBuffer(file);
+  const arrayBuffer = await getWebpBuffer(file.buffer);
 
   const filePath = `${"channelId" in id ? "channelAvatars" : "userAvatars"}/${
     "channelId" in id ? id.channelId : id.userId
@@ -118,6 +116,32 @@ export async function getReadable(
     console.error(e);
     return null;
   }
+}
+
+export async function uploadFromUrl(url: string, userId: string) {
+  // first, retrieve from github
+  const response = await ofetch.raw(url, {
+    responseType: "arrayBuffer",
+  });
+  const ghBuffer = response._data;
+  if (!ghBuffer) {
+    console.warn("Could not fetch avatar from GitHub");
+    return;
+  }
+
+  // then, convert to cropped webp
+  const arrayBuffer = await getWebpBuffer(Buffer.from(ghBuffer));
+
+  // finally, upload
+  const filePath = `userAvatars/${userId}`;
+  const { error } = await supabase.storage
+    .from(bucketName)
+    .upload(filePath, arrayBuffer, { contentType: "image/webp", upsert: true });
+  if (error) {
+    console.warn("Could not upload GitHub avatar", error);
+    return;
+  }
+  redis.addCachedFile(filePath, Buffer.from(arrayBuffer));
 }
 
 export async function del(id: { channelId: string } | { userId: string }) {

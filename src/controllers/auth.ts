@@ -162,6 +162,13 @@ export const github = [
       });
       username = githubUser.login;
       id = newUser._id;
+      if (process.env.NODE_ENV !== "test") {
+        const module = await import("../../supabase/client");
+        if (id) {
+          await module.uploadFromUrl(githubUser.avatar_url, id.toString());
+          await newUser.toggleHasAvatar(true);
+        }
+      }
     }
 
     if (id !== null)
