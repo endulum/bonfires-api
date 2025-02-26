@@ -56,18 +56,19 @@ export type ChannelQuery = mongoose.Query<
  */
 export type ChannelQueries = {
   byId: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
-  withUsersAndSettings: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
+  byIdFull: (this: ChannelQuery, ...args: any[]) => ChannelQuery;
 };
 
 export type ChannelMethods = {
-  getUserWithSettings: (this: ChannelDocument, ...args: any[]) => any;
+  getMemberWithSettings: (this: ChannelDocument, ...args: any[]) => any;
   isOwner: (this: ChannelDocument, ...args: any[]) => any;
   isInChannel: (this: ChannelDocument, ...args: any[]) => any;
-  getSettingsForUser: (this: ChannelDocument, ...args: any[]) => any;
   updateTitle: (this: ChannelDocument, ...args: any[]) => any;
   updateAvatar: (this: ChannelDocument, ...args: any[]) => any;
-  kick: (this: ChannelDocument, ...args: any[]) => any;
-  invite: (this: ChannelDocument, ...args: any[]) => any;
+  kickOne: (this: ChannelDocument, ...args: any[]) => any;
+  inviteOne: (this: ChannelDocument, ...args: any[]) => any;
+  kickMany: (this: ChannelDocument, ...args: any[]) => any;
+  inviteMany: (this: ChannelDocument, ...args: any[]) => any;
 };
 
 export type ChannelStatics = {
@@ -277,7 +278,9 @@ export type EventQuery = mongoose.Query<any, EventDocument, EventQueries> &
  *
  * This type represents `EventSchema.query`. For most use cases, you should not need to use this type explicitly.
  */
-export type EventQueries = {};
+export type EventQueries = {
+  byIdFull: (this: EventQuery, ...args: any[]) => EventQuery;
+};
 
 export type EventMethods = {};
 

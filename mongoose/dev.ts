@@ -75,7 +75,7 @@ export async function inviteUsersToChannels(
         ? Math.floor(Math.random() * maxUsersPer)
         : userPool.length;
       if (memberCount > 0)
-        await channel.invite(
+        await channel.inviteMany(
           [...userPool.sort(() => 0.5 - Math.random()).slice(0, memberCount)],
           channel.owner
         );

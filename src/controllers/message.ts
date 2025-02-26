@@ -28,8 +28,9 @@ export const create = [
     const message = await Message.findById(_id)
       .populate("user", "_id username")
       .select("-channel");
-    req.io.to(req.thisChannel._id.toString()).emit("new message", message);
-    res.json({ _id });
+    if (req.io)
+      req.io.to(req.thisChannel._id.toString()).emit("new event", message);
+    res.json({ message });
   }),
 ];
 

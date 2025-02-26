@@ -63,6 +63,28 @@ eventSchema.static(
   }
 );
 
+// single query that:
+// - avoids errors if id is not valid
+// - populates necessary fields
+eventSchema.query.byIdFull = function (_id: string) {
+  if (mongoose.isValidObjectId(_id))
+    return this.where({ _id })
+      .populate([
+        {
+          path: "user",
+          model: "User",
+          select: ["username", "_id"],
+        },
+        {
+          path: "targetUser",
+          model: "User",
+          select: ["username", "_id"],
+        },
+      ])
+      .select("-channel");
+  return this.where({ _id: undefined });
+};
+
 export const Event: EventModel = mongoose.model<EventDocument, EventModel>(
   "Event",
   eventSchema

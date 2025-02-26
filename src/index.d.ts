@@ -13,13 +13,10 @@ declare global {
       formErrors?: Record<string, string>;
       user: PopulatedDocument<UserDocument, "settings">;
       thisUser: PopulatedDocument<UserDocument, "settings">;
-      thisChannel: PopulatedDocument<
-        PopulatedDocument<ChannelDocument, "admin">,
-        "users"
-      >;
+      thisChannel: ChannelDocument;
       thisChannelSettings: ChannelSettingsDocument;
       thisMessage: MessageDocument;
-      io: Server;
+      io?: Server;
     }
   }
 }

@@ -5,6 +5,7 @@ import { validate } from "../middleware/validate";
 import { Channel } from "../../mongoose/models/channel";
 import * as user from "./user";
 import { User } from "../../mongoose/models/user";
+import { ChannelSettings } from "../../mongoose/models/channelSettings";
 
 export const getAll = [
   ...user.authenticate,
@@ -54,16 +55,11 @@ export const create = [
 ];
 
 export const exists = asyncHandler(async (req, res, next) => {
-  const channel = await Channel.findOne()
-    .byId(req.params.channel)
-    .populate([
-      { path: "owner", select: "id username" },
-      { path: "users", select: "id username" },
-    ]);
+  const channel = await Channel.findOne().byId(req.params.channel);
   if (!channel) res.status(404).send("Channel could not be found.");
   else {
     req.thisChannel = channel;
-    next();
+    return next();
   }
 });
 
@@ -71,12 +67,20 @@ export const isInChannel = [
   ...user.authenticate,
   exists,
   asyncHandler(async (req, res, next) => {
-    if (req.thisChannel.isInChannel(req.user)) {
-      req.thisChannelSettings = await req.thisChannel.getSettingsForUser(
-        req.user
-      );
+    if (!req.thisChannel.isInChannel(req.user))
+      res.status(403).send("You are not in this channel.");
+    else {
+      const channelSettings = await ChannelSettings.findOne({
+        channel: req.thisChannel,
+        user: req.user,
+      });
+      if (!channelSettings)
+        throw new Error(
+          `Could not find settings for channel ${req.thisChannel._id} and user ${req.user._id}`
+        );
+      req.thisChannelSettings = channelSettings;
       return next();
-    } else res.status(403).send("You are not in this channel.");
+    }
   }),
 ];
 
@@ -91,12 +95,7 @@ export const isOwnerOfChannel = [
 export const get = [
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    res.json(
-      await Channel.findOne()
-        .byId(req.thisChannel._id)
-        .withUsersAndSettings(req.thisChannel._id)
-        .populate({ path: "owner", select: "id username" })
-    );
+    res.json(await Channel.findOne().byIdFull(req.thisChannel._id));
   }),
 ];
 
@@ -105,9 +104,19 @@ export const edit = [
   ...validation,
   validate,
   asyncHandler(async (req, res) => {
-    if (req.body.title)
-      await req.thisChannel.updateTitle(req.body.title, req.user);
-    res.sendStatus(200);
+    if (req.body.title) {
+      const { event } = await req.thisChannel.updateTitle(
+        req.body.title,
+        req.user
+      );
+      if (req.io) {
+        req.io
+          .to(req.thisChannel._id.toString())
+          .emit("channel title", req.body.title);
+        req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+      }
+      res.json({ event });
+    } else res.sendStatus(200);
   }),
 ];
 
@@ -132,7 +141,16 @@ export const editSettings = [
   validate,
   asyncHandler(async (req, res) => {
     await req.thisChannelSettings.update(req.body);
-    res.json(await req.thisChannel.getUserWithSettings(req.user._id));
+
+    const updatedUser = await req.thisChannel.getMemberWithSettings(
+      req.user._id
+    );
+    if (req.io) {
+      req.io
+        .to(req.thisChannel._id.toString())
+        .emit("user personalize", updatedUser);
+    }
+    res.json({ user: updatedUser });
   }),
 ];
 
@@ -166,8 +184,12 @@ export const getMutual = [
 export const leave = [
   ...isInChannel,
   asyncHandler(async (req, res) => {
-    await req.thisChannel.kick([req.user]);
-    res.sendStatus(200);
+    const { event, userId } = await req.thisChannel.kickOne(req.user);
+    if (req.io) {
+      req.io.to(req.thisChannel._id.toString()).emit("user leave", userId);
+      req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+    }
+    res.json({ event });
   }),
 ];
 
@@ -202,8 +224,15 @@ export const invite = [
     if (req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is already in this channel.");
     else {
-      await req.thisChannel.invite([req.thisUser], req.user);
-      res.json(await req.thisChannel.getUserWithSettings(req.thisUser._id));
+      const { event, user } = await req.thisChannel.inviteOne(
+        req.thisUser,
+        req.user
+      );
+      if (req.io) {
+        req.io.to(req.thisChannel._id.toString()).emit("user invite", user);
+        req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+      }
+      res.json({ event, user });
     }
   }),
 ];
@@ -216,8 +245,15 @@ export const kick = [
     if (!req.thisChannel.isInChannel(req.thisUser))
       res.status(400).send("This user is not in this channel.");
     else {
-      await req.thisChannel.kick([req.thisUser], req.user);
-      res.sendStatus(200);
+      const { event, userId } = await req.thisChannel.kickOne(
+        req.thisUser,
+        req.user
+      );
+      if (req.io) {
+        req.io.to(req.thisChannel._id.toString()).emit("user leave", userId);
+        req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+      }
+      res.json({ event });
     }
   }),
 ];

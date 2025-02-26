@@ -19,6 +19,7 @@ const channelSchema: ChannelSchema = new Schema({
   hasAvatar: { type: Boolean, required: true, default: false },
 });
 
+// pagination
 channelSchema.static(
   "getPaginatedForUser",
   async function (
@@ -52,33 +53,43 @@ channelSchema.static(
   }
 );
 
-// this is to avoid 500's if the :channel param isn't an id
+// plain query, finds channel to add to req object
 channelSchema.query.byId = function (id: string) {
   if (mongoose.isValidObjectId(id)) return this.where({ _id: id });
   return this.where({ _id: undefined });
 };
 
-channelSchema.query.withUsersAndSettings = function (id: Types.ObjectId) {
-  return this.populate({
-    path: "users",
-    select: ["username", "status"],
-    populate: [
+// full query, to send as json for GET /channel/:channel
+channelSchema.query.byIdFull = function (id: string) {
+  if (mongoose.isValidObjectId(id))
+    return this.where({ _id: id }).populate([
       {
-        path: "channelSettings",
-        model: "ChannelSettings",
-        match: { channel: id },
-        select: ["displayName", "nameColor", "invisible", "-_id", "-user"],
+        path: "users",
+        select: ["id", "username", "status"],
+        populate: [
+          {
+            path: "channelSettings",
+            model: "ChannelSettings",
+            match: { channel: id },
+            select: ["displayName", "nameColor", "invisible", "-_id", "-user"],
+          },
+          {
+            path: "settings",
+            select: ["defaultNameColor", "defaultInvisible", "-_id"],
+          },
+        ],
       },
       {
-        path: "settings",
-        select: ["defaultNameColor", "defaultInvisible", "-_id"],
+        path: "owner",
+        select: ["id", "username"],
       },
-    ],
-  });
+    ]);
+  return this.where({ _id: undefined });
 };
 
+// gets one member of this channel including both personal and channel settings
 channelSchema.method(
-  "getUserWithSettings",
+  "getMemberWithSettings",
   async function (_id: Types.ObjectId) {
     return User.findOne({
       _id,
@@ -97,10 +108,12 @@ channelSchema.method(
   }
 );
 
+// bool
 channelSchema.method("isOwner", function (user: UserDocument) {
   return this.owner._id.toString() === user._id.toString();
 });
 
+// bool
 channelSchema.method("isInChannel", function (user: UserDocument) {
   return (
     this.users.find((u) => u._id.toString() === user._id.toString()) !==
@@ -108,54 +121,118 @@ channelSchema.method("isInChannel", function (user: UserDocument) {
   );
 });
 
-channelSchema.method("getSettingsForUser", async function (user: UserDocument) {
-  let channelSettings = await ChannelSettings.findOne({
-    user,
-    channel: this,
-  });
-  if (!channelSettings)
-    channelSettings = await ChannelSettings.create({
-      user: user,
-      channel: this,
-    });
-  return channelSettings;
-});
-
+// edits self and leaves an event
 channelSchema.method(
   "updateTitle",
   async function (newTitle: string, user: UserDocument) {
     this.title = newTitle;
     await this.save();
 
-    await Event.create({
+    const { _id } = await Event.create({
       type: "channel_title",
       channel: this,
       user,
       newChannelTitle: newTitle,
     });
+    const event = await Event.findOne().byIdFull(_id);
+    return { event };
   }
 );
 
+// edits self and leaves an event
 channelSchema.method("updateAvatar", async function (user: UserDocument) {
   if (!this.hasAvatar) {
     this.hasAvatar = true;
     await this.save();
   }
 
-  await Event.create({
+  const { _id } = await Event.create({
     type: "channel_avatar",
     channel: this,
     user,
   });
+  const event = await Event.findOne().byIdFull(_id);
+  return { event };
 });
 
 channelSchema.method(
-  "kick",
-  async function (users: UserDocument[], kicker?: UserDocument) {
-    this.users.pull(...users);
+  "kickOne",
+  async function (kickee: UserDocument, kicker: UserDocument | null) {
+    this.users.pull(kickee);
     await this.save();
 
-    // if there is nobody left, delete self
+    // if there is nobody left, delete self and stop
+    if (this.users.length === 0) {
+      await Channel.deleteOne({ _id: this._id });
+      return { event: null };
+    }
+
+    // if whoever left was the owner, the next user in the array is now the owner
+    if (kickee._id.toString() === this.owner._id.toString()) {
+      this.owner = this.users[0];
+      await this.save();
+    }
+
+    // remove channel settings for left user
+    await ChannelSettings.deleteMany({
+      $and: [{ channel: this }, { user: kickee }],
+    });
+
+    // make and return event
+    const { _id } = await Event.create(
+      kicker
+        ? {
+            // if a kicker was provided, this is a kick event
+            type: "user_kick",
+            channel: this,
+            user: kicker,
+            targetUser: kickee,
+          }
+        : {
+            // if no kicker was provided, this is a leave event
+            type: "user_leave",
+            channel: this,
+            user: kickee,
+          }
+    );
+    const event = await Event.findOne().byIdFull(_id);
+    return { event, userId: kickee._id };
+  }
+);
+
+channelSchema.method(
+  "inviteOne",
+  async function (invitee: UserDocument, invitor: UserDocument) {
+    this.users.push(invitee);
+    await this.save();
+
+    // create settings for new user
+    await ChannelSettings.create({
+      user: invitee,
+      channel: this,
+    });
+
+    // find user populated with settings, to return as part of socket payload
+    const user = await this.getMemberWithSettings(invitee._id);
+    // make and return event
+    const { _id } = await Event.create({
+      type: "user_invite",
+      channel: this,
+      user: invitor,
+      targetUser: invitee,
+    });
+    const event = await Event.findOne().byIdFull(_id);
+    return { event, user };
+  }
+);
+
+channelSchema.method(
+  "kickMany", // DEV ONLY
+  async function (kickees: UserDocument[]) {
+    this.users.pull(...kickees);
+    await this.save();
+
+    // if there is nobody left, delete self and stop
     if (this.users.length === 0) {
       await Channel.deleteOne({ _id: this._id });
       return;
@@ -163,7 +240,7 @@ channelSchema.method(
 
     // if one of the people that left was the owner, the next user in the array is now the owner
     if (
-      users.find((u) => u._id.toString() === this.owner._id.toString()) !==
+      kickees.find((k) => k._id.toString() === this.owner._id.toString()) !==
       undefined
     ) {
       this.owner = this.users[0];
@@ -172,52 +249,20 @@ channelSchema.method(
 
     // remove channel settings since users are no longer participants
     await ChannelSettings.deleteMany({
-      $and: [{ channel: this }, { user: { $in: users } }],
+      $and: [{ channel: this }, { user: { $in: kickees } }],
     });
-
-    // add "__ removed __ from this channel" event for each person that left
-    await Event.insertMany(
-      users.map((u) =>
-        kicker
-          ? {
-              // if a kicker was provided, this is a kick event
-              type: "user_kick",
-              channel: this,
-              user: kicker,
-              targetUser: u,
-            }
-          : {
-              // if no kicker was provided, this is a leave event
-              type: "user_leave",
-              channel: this,
-              user: u,
-            }
-      )
-    );
   }
 );
 
 channelSchema.method(
-  "invite",
-  async function (users: UserDocument[], invitor: UserDocument) {
-    this.users.push(...users);
+  "inviteMany", // DEV ONLY
+  async function (invitees: UserDocument[]) {
+    this.users.push(...invitees);
     await this.save();
 
-    // add channel settings for new participants
     await ChannelSettings.insertMany(
-      users.map((u) => ({ user: u, channel: this }))
+      invitees.map((i) => ({ user: i, channel: this }))
     );
-
-    // add "__ added __ to this channel" event for each invitee
-    if (invitor)
-      await Event.insertMany(
-        users.map((u) => ({
-          type: "user_invite",
-          channel: this,
-          user: invitor,
-          targetUser: u,
-        }))
-      );
   }
 );
 
