@@ -32,7 +32,7 @@ describe("atomicity", () => {
   });
 
   test("creates ChannelSettings if users are invited", async () => {
-    await channel.invite(users);
+    await channel.inviteMany(users);
     const channelSettings = await ChannelSettings.find({});
     expect(channelSettings.length).toBe(users.length + 1);
     expect(
@@ -43,13 +43,13 @@ describe("atomicity", () => {
   });
 
   test("removes ChannelSettings if users are kicked", async () => {
-    await channel.kick(users);
+    await channel.kickMany(users);
     const channelSettings = await ChannelSettings.find({});
     expect(channelSettings.length).toBe(1);
   });
 
   test("removes ChannelSettings if channel is deleted", async () => {
-    await channel.invite(users);
+    await channel.inviteMany(users);
     await Channel.deleteOne({ _id: channel._id });
     const channelSettings = await ChannelSettings.find({});
     expect(channelSettings.length).toBe(0);
@@ -62,11 +62,11 @@ describe("population", () => {
       owner: admin,
       title: "It's A Channel",
     });
-    await channel.invite(users);
+    await channel.inviteMany(users);
   });
 
   test("each user has `settings` and `channelSettings` properties", async () => {
-    const query = await Channel.findOne().withUsersAndSettings(channel._id);
+    const query = await Channel.findOne().byIdFull(channel._id);
     if (!query) throw new Error("Query is undefined.");
     console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
@@ -103,7 +103,7 @@ describe("population", () => {
         })
     );
 
-    const query = await Channel.findOne().withUsersAndSettings(channel._id);
+    const query = await Channel.findOne().byIdFull(channel._id);
     if (!query) throw new Error("Query is undefined.");
     console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
@@ -120,7 +120,7 @@ describe("population", () => {
 
   test("can evaluate a user's preferred name and color", async () => {
     const query = JSON.parse(
-      JSON.stringify(await Channel.findOne().withUsersAndSettings(channel._id))
+      JSON.stringify(await Channel.findOne().byIdFull(channel._id))
     );
     const mappedUsers = query.users.map((user) => ({
       name: user.channelSettings.displayName ?? user.username,

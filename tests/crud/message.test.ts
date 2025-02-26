@@ -41,8 +41,8 @@ describe("POST /channel/:channel/messages", () => {
       correctInputs
     );
     assertCode(response, 200);
-    messageId = response.body._id;
-    const timestamp = response.body.timestamp;
+    messageId = response.body.message._id;
+    const timestamp = response.body.message.timestamp;
 
     response = await req(`GET /channel/${channel._id}`, adminToken);
     expect(response.body.lastActivity).toEqual(timestamp);

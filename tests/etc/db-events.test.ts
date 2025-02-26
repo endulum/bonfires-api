@@ -26,7 +26,7 @@ beforeAll(async () => {
 
 describe("each actionable thing leaves an event", () => {
   test("inviting a user", async () => {
-    await channel.invite([users[2]], admin);
+    await channel.inviteOne(users[2], admin);
     const event = await Event.findOne({
       type: "user_invite",
       channel,
@@ -37,7 +37,7 @@ describe("each actionable thing leaves an event", () => {
   });
 
   test("kicking a user", async () => {
-    await channel.kick([users[2]], admin);
+    await channel.kickOne(users[2], admin);
     const event = await Event.findOne({
       type: "user_kick",
       channel,
@@ -48,7 +48,7 @@ describe("each actionable thing leaves an event", () => {
   });
 
   test("a user leaving", async () => {
-    await channel.kick([users[1]]);
+    await channel.kickOne(users[1]);
     const event = await Event.findOne({
       type: "user_leave",
       channel,
@@ -77,7 +77,7 @@ describe("each actionable thing leaves an event", () => {
       { content: "owo" }
     );
     await req(
-      `PUT /channel/${channel._id}/message/${body._id}/pin`,
+      `PUT /channel/${channel._id}/message/${body.message._id}/pin`,
       adminToken,
       { pin: true }
     );
@@ -85,7 +85,7 @@ describe("each actionable thing leaves an event", () => {
       type: "message_pin",
       channel,
       user: admin,
-      targetMessage: body._id,
+      targetMessage: body.message._id,
     });
     expect(event).not.toBeNull();
   });

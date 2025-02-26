@@ -80,7 +80,7 @@ describe("channel", () => {
       owner: admin,
     });
     users.push(...(await createBulkUsers(3)));
-    await channel.invite([users[0]]);
+    await channel.inviteMany([users[0]]);
   });
 
   test("member-only action", async () => {

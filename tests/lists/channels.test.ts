@@ -24,12 +24,12 @@ describe("GET /channels", () => {
     const channels = await createBulkChannels(50, [admin]);
     await Promise.all(
       channels.slice(0, channelCount / 2).map(async (channel) => {
-        await channel.invite([users[0]]);
+        await channel.inviteMany([users[0]]);
       })
     );
     await Promise.all(
       channels.slice(channelCount / 2, channelCount).map(async (channel) => {
-        await channel.invite([users[1]]);
+        await channel.inviteMany([users[1]]);
       })
     );
   });

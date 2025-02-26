@@ -24,7 +24,7 @@ describe("GET /user/:user/mutual", () => {
   test("gets mutual channels", async () => {
     const users = await createBulkUsers(2);
     const [channel] = await createBulkChannels(1, [admin]);
-    await channel.invite([users[0]]);
+    await channel.inviteMany([users[0]]);
     // admin is admin of channel
     // user 0 is member of channel
     // user 1 is not member of channel
@@ -69,7 +69,7 @@ describe("POST /channel/:channel/leave", () => {
       title: "It's A Channel",
     });
     users.push(...(await createBulkUsers(2)));
-    await channel.invite(users);
+    await channel.inviteMany(users);
     // channel should have three users - two bulks and one owner
   });
 
@@ -122,7 +122,7 @@ describe("POST /channel/:channel/invite/:user", () => {
       title: "It's A Channel",
     });
     users.push(...(await createBulkUsers(2)));
-    await channel.invite([users[0]]);
+    await channel.inviteMany([users[0]]);
   });
 
   test("400 if user is in channel", async () => {
@@ -156,7 +156,7 @@ describe("POST /channel/:channel/kick/:user", () => {
       title: "It's A Channel",
     });
     users.push(...(await createBulkUsers(2)));
-    await channel.invite([users[0]]);
+    await channel.inviteMany([users[0]]);
   });
 
   test("400 if user is not in channel", async () => {

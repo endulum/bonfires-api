@@ -38,7 +38,7 @@ describe("GET /channel/:channel", () => {
   beforeAll(async () => {
     const users = await createBulkUsers(3);
     const channel: ChannelDocument | null = await Channel.findById(channelId);
-    if (channel) channel.invite(users);
+    if (channel) channel.inviteMany(users);
   });
 
   test("404 if not found", async () => {
