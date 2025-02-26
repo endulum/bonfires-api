@@ -49,8 +49,10 @@ export const uploadChannelAvatar = [
       channelId: req.thisChannel._id.toString(),
     });
     const { event } = await req.thisChannel.updateAvatar(req.user);
-    if (req.io)
+    if (req.io) {
+      req.io.to(req.thisChannel._id.toString()).emit("channel avatar");
       req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+    }
     res.json({ event });
   }),
 ];
