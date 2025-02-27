@@ -29,6 +29,7 @@ export async function createBulkUsers(count: number) {
     bulkUsers.map((u) => ({
       username: u.username,
       status: u.status,
+      password: "password",
     }))
   );
 
