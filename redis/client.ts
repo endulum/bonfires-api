@@ -26,38 +26,53 @@ export async function addCachedFile(fileId: string, buffer: Buffer) {
 type User = {
   _id: string;
   username: string;
+  invisible: boolean;
 };
+
+export async function getChannelActive(channelId: string) {
+  const existingActive = await client.get(`channel_${channelId}`);
+
+  // if there's nothing at this key, return nothing
+  if (!existingActive) return null;
+
+  const existing: User[] = JSON.parse(existingActive);
+  if (existing.length > 0) return existing;
+
+  // if the array at this key is empty, delete the key
+  await client.del(`channel_${channelId}`);
+  return null;
+}
 
 export async function updateChannelActive(
   channelId: string,
   type: "add" | "remove",
   user: User
 ) {
-  const existingActive = await client.get(`channel_${channelId}`);
+  // get existing
+  const existingActive = await getChannelActive(channelId);
+
+  // if user is invisible, don't change anything
+  if (user.invisible) return existingActive;
+
   if (existingActive) {
-    const active: User[] = JSON.parse(existingActive);
-    if (type === "add" && !active.find((u) => u._id === user._id)) {
+    if (type === "add" && !existingActive.find((u) => u._id === user._id)) {
       await client.set(
         `channel_${channelId}`,
-        JSON.stringify([...active, user])
+        JSON.stringify([...existingActive, user])
       );
     } else {
       await client.set(
         `channel_${channelId}`,
-        JSON.stringify(active.filter((u) => u._id !== user._id))
+        JSON.stringify(existingActive.filter((u) => u._id !== user._id))
       );
     }
   } else {
-    await client.set(`channel_${channelId}`, JSON.stringify([user]));
+    if (type === "add")
+      await client.set(`channel_${channelId}`, JSON.stringify([user]));
   }
 
-  const updatedActive = await client.get(`channel_${channelId}`);
-  if (!updatedActive) return null;
-  const updated: User[] = JSON.parse(updatedActive);
-  if (updated.length > 0) return updated;
-  // just delete the key if nobody's active
-  await client.del(`channel_${channelId}`);
-  return null;
+  // now that it's updated, re-fetch and return
+  return await getChannelActive(channelId);
 }
 
 export { client };

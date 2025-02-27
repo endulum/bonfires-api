@@ -73,7 +73,7 @@ io.on("connection", async (socket) => {
     "view channel",
     async (
       channel: { _id: string; title: string },
-      user: { _id: string; username: string }
+      user: { _id: string; username: string; invisible: boolean }
     ) => {
       await socket.join(channel._id);
       // update and emit user count AFTER joining room
@@ -86,7 +86,7 @@ io.on("connection", async (socket) => {
     "leave channel",
     async (
       channel: { _id: string; title: string },
-      user: { _id: string; username: string }
+      user: { _id: string; username: string; invisible: boolean }
     ) => {
       const users = await updateChannelActive(channel._id, "remove", user);
       io.to(channel._id).emit("activity update", users);
