@@ -94,6 +94,14 @@ io.on("connection", async (socket) => {
       await socket.leave(channel._id);
     }
   );
+
+  socket.on("you started typing", async (channelId: string, userId: string) => {
+    io.to(channelId).emit("someone started typing", userId);
+  });
+
+  socket.on("you stopped typing", async (channelId: string, userId: string) => {
+    io.to(channelId).emit("someone stopped typing", userId);
+  });
 });
 
 const port = process.env.PORT ?? 3000;
