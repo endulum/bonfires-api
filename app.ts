@@ -16,6 +16,7 @@ dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 console.warn(`environment: ${process.env.NODE_ENV}`);
 
 import "./mongoose/connectionClient";
+import { updateChannelActive } from "./redis/client";
 
 const app = express();
 const server = createServer(app);
@@ -68,20 +69,16 @@ app.use(
 app.use(errorHandler);
 
 io.on("connection", async (socket) => {
-  /* socket.onAny((event, ...args) => {
-    console.log({ event, args });
-  }); */
-
   socket.on(
     "view channel",
     async (
       channel: { _id: string; title: string },
       user: { _id: string; username: string }
     ) => {
-      console.log(
-        `user '${user.username}' [${user._id}] joined channel '${channel.title}' [${channel._id}]`
-      );
       await socket.join(channel._id);
+      // update and emit user count AFTER joining room
+      const users = await updateChannelActive(channel._id, "add", user);
+      io.to(channel._id).emit("activity update", users);
     }
   );
 
@@ -91,24 +88,12 @@ io.on("connection", async (socket) => {
       channel: { _id: string; title: string },
       user: { _id: string; username: string }
     ) => {
-      console.log(
-        `user '${user.username}' [${user._id}] left channel '${channel.title}' [${channel._id}]`
-      );
+      const users = await updateChannelActive(channel._id, "remove", user);
+      io.to(channel._id).emit("activity update", users);
+      // update and emit user count BEFORE leaving room
       await socket.leave(channel._id);
     }
   );
-
-  /* socket.on('you started typing', async (
-    channelId: string, userId: string, userName: string
-  ) => {
-    socket.to(channelId).emit('someone started typing', userId, userName)
-  })
-
-  socket.on('you stopped typing', async (
-    channelId: string, userId: string
-  ) => {
-    socket.to(channelId).emit('someone stopped typing', userId)
-  }) */
 });
 
 const port = process.env.PORT ?? 3000;
