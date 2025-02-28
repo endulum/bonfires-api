@@ -462,7 +462,7 @@ export type User = {
   username: string;
   password?: string;
   joined?: Date;
-  status?: string;
+  tagline?: string;
   ghUser?: string;
   ghId?: number;
   settings: UserSettings["_id"] | UserSettings;
@@ -552,7 +552,7 @@ export type UserDocument = mongoose.Document<
     username: string;
     password?: string;
     joined?: Date;
-    status?: string;
+    tagline?: string;
     ghUser?: string;
     ghId?: number;
     settings: UserSettingsDocument["_id"] | UserSettingsDocument;

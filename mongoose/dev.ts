@@ -28,7 +28,7 @@ export async function createBulkUsers(count: number) {
   const users = await User.create(
     bulkUsers.map((u) => ({
       username: u.username,
-      status: u.status,
+      tagline: u.tagline,
       password: "password",
     }))
   );

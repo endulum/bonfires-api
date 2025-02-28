@@ -42,10 +42,10 @@ export const authenticate = [
 export const edit = [
   ...authenticate,
   usernameValidation,
-  body("status")
+  body("tagline")
     .trim()
-    .isLength({ max: 200 })
-    .withMessage("Statuses cannot be more than 200 characters long.")
+    .isLength({ max: 256 })
+    .withMessage("Taglines cannot be more than 256 characters long.")
     .escape(),
   body("password")
     .trim()

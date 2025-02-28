@@ -7,7 +7,7 @@ export function randDate() {
 export function bulkUsers(count: number) {
   const users: Array<{
     username: string;
-    status: string;
+    tagline: string;
     defaultNameColor?: string;
   }> = faker.helpers
     .uniqueArray(
@@ -23,7 +23,7 @@ export function bulkUsers(count: number) {
       });
       return {
         username: u,
-        status: faker.person.bio(),
+        tagline: faker.person.bio(),
         ...(typeof color === "string" && { defaultNameColor: color }),
       };
     });

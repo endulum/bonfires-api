@@ -23,7 +23,7 @@ const userSchema: UserSchema = new Schema(
     },
     password: { type: String, select: false, required: false, minlength: 8 },
     joined: { type: Date, default: () => Date.now(), immutable: true },
-    status: { type: String, maxlength: 256 },
+    tagline: { type: String, maxlength: 256 },
     ghUser: { type: String, required: false },
     ghId: { type: Number, required: false },
     settings: {
@@ -63,7 +63,7 @@ userSchema.method(
   async function (body: Record<string, string>) {
     // this User object's details
     if (body.username !== "") this.username = body.username;
-    this.status = body.status;
+    this.tagline = body.tagline;
     if (body.password !== "") this.password = body.password;
 
     // the UserSettings object belonging to this User object

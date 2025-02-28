@@ -65,7 +65,7 @@ channelSchema.query.byIdFull = function (id: string) {
     return this.where({ _id: id }).populate([
       {
         path: "users",
-        select: ["id", "username", "status"],
+        select: ["id", "username", "tagline"],
         populate: [
           {
             path: "channelSettings",

@@ -30,7 +30,7 @@ describe("GET /me", () => {
 describe("PUT /me", () => {
   const correctInputs = {
     username: "admin",
-    status: "Snazzy status here.",
+    tagline: "Snazzy tagline here.",
     password: "new-password",
     confirmPassword: "new-password",
     currentPassword: "password",
@@ -49,7 +49,7 @@ describe("PUT /me", () => {
         { username: "basic" },
         { username: "a" },
         { username: "&&&&" },
-        { status: Array(1000).fill("A").join("") },
+        { tagline: Array(1000).fill("A").join("") },
         { password: "." },
         { password: "some mismatched password" },
         { confirmPassword: "some mismatched password" },
