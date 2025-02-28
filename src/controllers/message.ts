@@ -121,7 +121,21 @@ export const pin = [
     } else if (req.body.pin === "false" && req.thisMessage.pinned === false)
       res.status(400).send("This message was never pinned.");
     else {
-      await req.thisMessage.pin(req.body.pin === "true", req.user);
+      const event = await req.thisMessage.pin(
+        req.body.pin === "true",
+        req.user
+      );
+      if (req.io) {
+        if (event)
+          req.io.to(req.thisChannel._id.toString()).emit("new event", event);
+        req.io
+          .to(req.thisChannel._id.toString())
+          .emit(
+            "message pin",
+            await Message.findOne().byIdFull(req.thisMessage._id),
+            req.body.pin === "true"
+          );
+      }
       res.sendStatus(200);
     }
   }),
@@ -159,8 +173,13 @@ export const edit = [
   validate,
   asyncHandler(async (req, res) => {
     await req.thisMessage.edit(req.body.content);
+    const editedMessage = await Message.findOne().byIdFull(req.thisMessage._id);
+    if (req.io)
+      req.io
+        .to(req.thisChannel._id.toString())
+        .emit("message edit", editedMessage);
     res.json({
-      message: await Message.findOne().byIdFull(req.thisMessage._id),
+      message: editedMessage,
     });
   }),
 ];
@@ -169,6 +188,10 @@ export const del = [
   ...isYoursOrOwner,
   asyncHandler(async (req, res) => {
     await Message.deleteOne({ _id: req.thisMessage._id });
+    if (req.io)
+      req.io
+        .to(req.thisChannel._id.toString())
+        .emit("message delete", req.thisMessage._id);
     res.sendStatus(200);
   }),
 ];

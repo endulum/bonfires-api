@@ -93,13 +93,16 @@ messageSchema.method(
     this.pinned = pinned;
     await this.save();
 
-    if (pinned === true)
-      await Event.create({
+    if (pinned === true) {
+      const { _id } = await Event.create({
         type: "message_pin",
         channel: this.channel,
         user,
         targetMessage: this,
       });
+      const event = await Event.findOne().byIdFull(_id);
+      return event;
+    } else return null;
   }
 );
 
