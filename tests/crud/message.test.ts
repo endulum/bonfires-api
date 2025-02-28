@@ -1,5 +1,5 @@
 import "../memoryServer";
-import { req, assertCode, assertInputErrors, token } from "../helpers";
+import { req, assertCode, assertInputErrors, token, logBody } from "../helpers";
 import { wipeWithAdmin } from "../../mongoose/dev";
 import { Channel } from "../../mongoose/models/channel";
 import {
@@ -84,5 +84,65 @@ describe("POST /channel/:channel/message/:message/pin", () => {
       { pin: "false" }
     );
     assertCode(response, 200);
+  });
+});
+
+describe("GET /channel/:channel/message/:message", () => {
+  test("404 if not found", async () => {
+    const response = await req(
+      `GET /channel/${channel._id}/message/owo`,
+      adminToken
+    );
+    assertCode(response, 404);
+  });
+
+  test("200 and shows message", async () => {
+    const response = await req(
+      `GET /channel/${channel._id}/message/${messageId}`,
+      adminToken
+    );
+    assertCode(response, 200);
+    logBody(response);
+  });
+});
+
+describe("PUT /channel/:channel/message/:message", () => {
+  const correctInputs = { content: "Hello" };
+  test("400 and errors", async () => {
+    await assertInputErrors({
+      reqArgs: [`PUT /channel/${channel._id}/message/${messageId}`, adminToken],
+      correctInputs,
+      wrongInputs: [
+        { content: "" },
+        { content: Array(1001).fill("A").join("") },
+      ],
+    });
+  });
+
+  test("200 and returns message + updates the `lastEdited` of the message", async () => {
+    const response = await req(
+      `PUT /channel/${channel._id}/message/${messageId}`,
+      adminToken,
+      correctInputs
+    );
+    assertCode(response, 200);
+    expect(response.body.message.lastEdited).toBeDefined();
+  });
+});
+
+describe("DELETE /channel/:channel/message/:message", () => {
+  test("200 and deletes", async () => {
+    let response = await req(
+      `DELETE /channel/${channel._id}/message/${messageId}`,
+      adminToken
+    );
+    assertCode(response, 200);
+
+    // it should no longer exist
+    response = await req(
+      `GET /channel/${channel._id}/message/${messageId}`,
+      adminToken
+    );
+    assertCode(response, 404);
   });
 });

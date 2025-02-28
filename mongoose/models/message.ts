@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 
 import {
   MessageDocument,
@@ -14,6 +14,7 @@ const messageSchema: MessageSchema = new Schema({
   channel: { type: Schema.ObjectId, ref: "Channel", required: true },
   user: { type: Schema.ObjectId, ref: "User", required: true },
   timestamp: { type: Date, default: () => Date.now(), immutable: true },
+  lastEdited: { type: Date },
   content: { type: String, required: true },
   pinned: { type: Boolean, default: false },
 });
@@ -56,17 +57,35 @@ messageSchema.static(
       pinned: true,
     })
       .sort("-timestamp -_id")
+      .populate("user", "_id username")
       .select("-channel");
 
     return pinnedMessages;
   }
 );
 
-// this is to avoid 500's if the :message param isn't an id
 messageSchema.query.byId = function (id: string) {
   if (mongoose.isValidObjectId(id)) return this.where({ _id: id });
   return this.where({ _id: undefined });
 };
+
+messageSchema.query.byIdFull = function (id: string) {
+  if (mongoose.isValidObjectId(id))
+    return this.where({ _id: id })
+      .populate("user", "_id username")
+      .select("-channel");
+  return this.where({ _id: undefined });
+};
+
+messageSchema.method("belongsTo", async function (userId: Types.ObjectId) {
+  return userId.toString() === this._id.toString();
+});
+
+messageSchema.method("edit", async function (content: string) {
+  this.content = content;
+  this.lastEdited = new Date();
+  await this.save();
+});
 
 messageSchema.method(
   "pin",

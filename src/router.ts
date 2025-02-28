@@ -40,6 +40,11 @@ router
   .post(message.create);
 router.route("/channel/:channel/pins").get(message.getPinned);
 router.route("/channel/:channel/message/:message/pin").put(message.pin);
+router
+  .route("/channel/:channel/message/:message")
+  .get(message.get)
+  .put(message.edit)
+  .delete(message.del);
 
 if (process.env.NODE_ENV !== "test") {
   import("./controllers/supa").then((module) => {

@@ -355,6 +355,7 @@ export type Message = {
   channel: Channel["_id"] | Channel;
   user: User["_id"] | User;
   timestamp?: Date;
+  lastEdited?: Date;
   content: string;
   pinned?: boolean;
   _id: mongoose.Types.ObjectId;
@@ -392,9 +393,12 @@ export type MessageQuery = mongoose.Query<
  */
 export type MessageQueries = {
   byId: (this: MessageQuery, ...args: any[]) => MessageQuery;
+  byIdFull: (this: MessageQuery, ...args: any[]) => MessageQuery;
 };
 
 export type MessageMethods = {
+  belongsTo: (this: MessageDocument, ...args: any[]) => any;
+  edit: (this: MessageDocument, ...args: any[]) => any;
   pin: (this: MessageDocument, ...args: any[]) => any;
 };
 
@@ -445,6 +449,7 @@ export type MessageDocument = mongoose.Document<
     channel: ChannelDocument["_id"] | ChannelDocument;
     user: UserDocument["_id"] | UserDocument;
     timestamp?: Date;
+    lastEdited?: Date;
     content: string;
     pinned?: boolean;
     _id: mongoose.Types.ObjectId;

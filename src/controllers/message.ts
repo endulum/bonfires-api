@@ -93,6 +93,16 @@ const exists = asyncHandler(async (req, res, next) => {
   res.status(404).send("Message not found.");
 });
 
+export const get = [
+  ...channel.isInChannel,
+  exists,
+  asyncHandler(async (req, res) => {
+    res.json({
+      message: await Message.findOne().byIdFull(req.thisMessage._id),
+    });
+  }),
+];
+
 export const pin = [
   ...channel.isInChannel,
   exists,
@@ -114,5 +124,51 @@ export const pin = [
       await req.thisMessage.pin(req.body.pin === "true", req.user);
       res.sendStatus(200);
     }
+  }),
+];
+
+const isYours = [
+  ...channel.isInChannel,
+  exists,
+  asyncHandler(async (req, res, next) => {
+    if (req.thisMessage.belongsTo(req.user._id)) return next();
+    res.status(403).send("This message does not belong to you.");
+  }),
+];
+
+const isYoursOrOwner = [
+  ...channel.isInChannel,
+  exists,
+  asyncHandler(async (req, res, next) => {
+    if (
+      req.thisMessage.belongsTo(req.user._id) ||
+      req.thisChannel.isOwner(req.user)
+    )
+      return next();
+    res
+      .status(403)
+      .send(
+        "Only the message sender or channel owner can perform this action."
+      );
+  }),
+];
+
+export const edit = [
+  ...isYours,
+  validation,
+  validate,
+  asyncHandler(async (req, res) => {
+    await req.thisMessage.edit(req.body.content);
+    res.json({
+      message: await Message.findOne().byIdFull(req.thisMessage._id),
+    });
+  }),
+];
+
+export const del = [
+  ...isYoursOrOwner,
+  asyncHandler(async (req, res) => {
+    await Message.deleteOne({ _id: req.thisMessage._id });
+    res.sendStatus(200);
   }),
 ];
