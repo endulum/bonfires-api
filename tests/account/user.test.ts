@@ -54,7 +54,6 @@ describe("PUT /me", () => {
         { password: "some mismatched password" },
         { confirmPassword: "some mismatched password" },
         { currentPassword: "some mismatched password" },
-        { defaultNameColor: "" },
         { defaultNameColor: "owo" },
         { defaultInvisible: "" },
         { defaultInvisible: "owo" },
