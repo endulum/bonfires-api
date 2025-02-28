@@ -86,6 +86,7 @@ export const edit = [
   body("defaultInvisible").trim().isBoolean(),
   body("defaultNameColor")
     .trim()
+    .optional({ values: "falsy" })
     .matches(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i)
     .withMessage("Name color must be a valid hex code."),
   validate,

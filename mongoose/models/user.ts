@@ -70,7 +70,9 @@ userSchema.method(
     const settings = await UserSettings.findOne({ user: this });
     if (settings) {
       settings.defaultInvisible = body.defaultInvisible === "true";
-      settings.defaultNameColor = body.defaultNameColor;
+      if (body.defaultNameColor)
+        settings.defaultNameColor = body.defaultNameColor;
+      else settings.defaultNameColor = undefined;
       await settings.save();
     }
     await this.save();
