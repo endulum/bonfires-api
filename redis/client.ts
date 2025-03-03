@@ -14,13 +14,13 @@ client.connect();
 export async function findCachedFile(fileId: string) {
   const buffer = await client.get(
     commandOptions({ returnBuffers: true }),
-    `avatar_${fileId}`
+    `BONFIRES_avatar_${fileId}`
   );
   return buffer ?? null;
 }
 
 export async function addCachedFile(fileId: string, buffer: Buffer) {
-  await client.setEx(`avatar_${fileId}`, 3600, buffer);
+  await client.setEx(`BONFIRES_avatar_${fileId}`, 3600, buffer);
 }
 
 type User = {
@@ -30,7 +30,8 @@ type User = {
 };
 
 export async function getChannelActive(channelId: string) {
-  const existingActive = await client.get(`channel_${channelId}`);
+  const key = `BONFIRES_channel_${channelId}`;
+  const existingActive = await client.get(key);
 
   // if there's nothing at this key, return nothing
   if (!existingActive) return null;
@@ -39,7 +40,7 @@ export async function getChannelActive(channelId: string) {
   if (existing.length > 0) return existing;
 
   // if the array at this key is empty, delete the key
-  await client.del(`channel_${channelId}`);
+  await client.del(key);
   return null;
 }
 
@@ -48,7 +49,7 @@ export async function updateChannelActive(
   type: "add" | "remove",
   user: User
 ) {
-  // get existing
+  const key = `BONFIRES_channel_${channelId}`;
   const existingActive = await getChannelActive(channelId);
 
   // if user is invisible, don't change anything
@@ -56,19 +57,15 @@ export async function updateChannelActive(
 
   if (existingActive) {
     if (type === "add" && !existingActive.find((u) => u._id === user._id)) {
-      await client.set(
-        `channel_${channelId}`,
-        JSON.stringify([...existingActive, user])
-      );
+      await client.set(key, JSON.stringify([...existingActive, user]));
     } else {
       await client.set(
-        `channel_${channelId}`,
+        key,
         JSON.stringify(existingActive.filter((u) => u._id !== user._id))
       );
     }
   } else {
-    if (type === "add")
-      await client.set(`channel_${channelId}`, JSON.stringify([user]));
+    if (type === "add") await client.set(key, JSON.stringify([user]));
   }
 
   // now that it's updated, re-fetch and return
