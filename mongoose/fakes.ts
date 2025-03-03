@@ -19,7 +19,7 @@ export function bulkUsers(count: number) {
     )
     .map((u) => {
       const color = faker.helpers.maybe(faker.color.rgb, {
-        probability: 0.75,
+        probability: 0.85,
       });
       return {
         username: u,
