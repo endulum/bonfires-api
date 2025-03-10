@@ -47,9 +47,11 @@ if (process.env.NODE_ENV === "development") {
   app.use(
     asyncHandler(async (req, _res, next) => {
       if (["POST", "PUT"].includes(req.method))
+        // log the form that was sent
         // eslint-disable-next-line no-console
         console.dir(req.body, { depth: null });
       if (req.method === "GET" && Object.keys(req.params).length > 1)
+        // log any url params that were sent
         // eslint-disable-next-line no-console
         console.dir(req.params, { depth: null });
       next();

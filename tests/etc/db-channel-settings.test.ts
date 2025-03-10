@@ -68,7 +68,7 @@ describe("population", () => {
   test("each user has `settings` and `channelSettings` properties", async () => {
     const query = await Channel.findOne().byIdFull(channel._id);
     if (!query) throw new Error("Query is undefined.");
-    console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
+    // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
     expect(
       query.users.every((user) => {
@@ -105,7 +105,7 @@ describe("population", () => {
 
     const query = await Channel.findOne().byIdFull(channel._id);
     if (!query) throw new Error("Query is undefined.");
-    console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
+    // console.dir(JSON.parse(JSON.stringify(query)), { depth: null });
 
     expect(
       query.users.filter(

@@ -10,6 +10,7 @@ export const validate = asyncHandler(async (req, res, next) => {
       path: "path" in error ? error.path : "",
     }));
     if (process.env.NODE_ENV === "development")
+      // log form errors
       // eslint-disable-next-line no-console
       console.dir(errors, { depth: null });
     res.status(400).json({
