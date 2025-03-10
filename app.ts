@@ -1,103 +1,122 @@
-// To successfully import a module: https://stackoverflow.com/questions/41292559/could-not-find-a-declaration-file-for-module-module-name-path-to-module-nam
+import dotenv from "dotenv";
+import express from "express";
+import asyncHandler from "express-async-handler";
+import cors from "cors";
+import logger from "morgan";
+import multer from "multer";
+import compression from "compression";
+import helmet from "helmet";
 
-import express, {
-  type Express,
-  type NextFunction,
-  type Request,
-  type Response
-} from 'express'
-import mongoose from 'mongoose'
-import morgan from 'morgan'
-import cors from 'cors'
-import 'dotenv/config'
-import { createServer } from 'http'
-import { Server } from 'socket.io'
-import compression from 'compression'
+import { Server } from "socket.io";
+import { createServer } from "http";
 
-import router from './routes'
-import helmet from 'helmet'
+import { errorHandler } from "./src/middleware/errorHandler";
+import { router } from "./src/router";
 
-// todo: origin '*' is inherently unsafe. research and implement a safer method
+dotenv.config({ path: ".env" });
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+console.warn(`environment: ${process.env.NODE_ENV}`);
 
-const app: Express = express()
-const server = createServer(app)
+import "./mongoose/connectionClient";
+import { updateChannelActive } from "./redis/client";
+
+const app = express();
+const server = createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*' }
-})
-const port: string | undefined = process.env.PORT
-const uri: string | undefined = process.env.CONNECTION
-const secret: string | undefined = process.env.SECRET
+  cors: { origin: process.env.FRONTEND_URL },
+});
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-if (secret === undefined) throw new Error('JWT secret is not defined.')
-
-if (uri !== undefined) {
-  void mongoose.connect(uri)
-  const db = mongoose.connection
-  db.on('open', console.log.bind(console, 'mongo server connected'))
-  db.on('error', console.error.bind(console, 'mongo connection error'))
-} else throw new Error('Mongoose URI is not defined.')
-
-app.use(compression())
-app.use(helmet())
-app.use(cors({
-  origin: '*'
-}))
-app.use(morgan('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
-
-// toggle this on and off to simulate latency when needed
-// app.use((req, res, next) => setTimeout(next, 750))
-
-app.use(function (req, res, next) {
-  req.io = io
-  next()
-})
-
-app.use(router)
-
-app.use(function (req, res, next) {
-  res.sendStatus(404)
-})
-
-app.use((
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  console.error(err.stack)
-  if ('statusCode' in err && typeof err.statusCode === 'number') {
-    res.status(err.statusCode).send(err.message)
-  } else {
-    res.status(500).send('Something went wrong.')
-  }
-})
-
-io.on('connection', async (socket) => {
-  socket.on('viewing channel', async (channelId: string) => {
-    await socket.join(channelId)
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(compression());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   })
+);
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 
-  socket.on('leaving channel', async (channelId: string) => {
-    await socket.leave(channelId)
-  })
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(upload.single("upload"));
 
-  socket.on('you started typing', async (
-    channelId: string, userId: string, userName: string
-  ) => {
-    socket.to(channelId).emit('someone started typing', userId, userName)
-  })
+// add io to req
+app.use(async (req, _res, next) => {
+  req.io = io;
+  return next();
+});
 
-  socket.on('you stopped typing', async (
-    channelId: string, userId: string
-  ) => {
-    socket.to(channelId).emit('someone stopped typing', userId)
-  })
-})
+// suppress favicon request
+app.get("/favicon.ico", (_req, res) => res.status(204).end());
 
-if (port !== undefined) {
-  server.listen(port, () => {
-    console.log(`⚡️ server starting at http://localhost:${port}`)
+// in dev, log method and given values
+if (process.env.NODE_ENV === "development") {
+  app.use(logger("dev"));
+  app.use(
+    asyncHandler(async (req, _res, next) => {
+      if (["POST", "PUT"].includes(req.method))
+        // log the form that was sent
+        // eslint-disable-next-line no-console
+        console.dir(req.body, { depth: null });
+      if (req.method === "GET" && Object.keys(req.params).length > 1)
+        // log any url params that were sent
+        // eslint-disable-next-line no-console
+        console.dir(req.params, { depth: null });
+      next();
+    })
+  );
+}
+
+app.use(router);
+
+app.use(
+  "*",
+  asyncHandler(async (_req, res) => {
+    res.sendStatus(404);
   })
-} else throw new Error('Port is not defined.')
+);
+
+app.use(errorHandler);
+
+io.on("connection", async (socket) => {
+  socket.on(
+    "view channel",
+    async (
+      channel: { _id: string; title: string },
+      user: { _id: string; username: string; invisible: boolean }
+    ) => {
+      await socket.join(channel._id);
+      // update and emit user count AFTER joining room
+      const users = await updateChannelActive(channel._id, "add", user);
+      io.to(channel._id).emit("activity update", users);
+    }
+  );
+
+  socket.on(
+    "leave channel",
+    async (
+      channel: { _id: string; title: string },
+      user: { _id: string; username: string; invisible: boolean }
+    ) => {
+      const users = await updateChannelActive(channel._id, "remove", user);
+      io.to(channel._id).emit("activity update", users);
+      // update and emit user count BEFORE leaving room
+      await socket.leave(channel._id);
+    }
+  );
+
+  socket.on("you started typing", async (channelId: string, userId: string) => {
+    io.to(channelId).emit("someone started typing", userId);
+  });
+
+  socket.on("you stopped typing", async (channelId: string, userId: string) => {
+    io.to(channelId).emit("someone stopped typing", userId);
+  });
+});
+
+const port = process.env.PORT ?? 3000;
+server.listen(port, () => {
+  console.warn(`⚡️ server starting at http://localhost:${port}`);
+});
