@@ -6,6 +6,11 @@ import { parse } from "querystring";
 import { Types, isValidObjectId } from "mongoose";
 
 import { validate } from "../middleware/validate";
+import {
+  loginLimiter,
+  signupLimiter,
+  registerLimiter,
+} from "../middleware/rateLimiter";
 import { User } from "../../mongoose/models/user";
 
 // is imported at user controller for username changing
@@ -43,6 +48,7 @@ const isNotLoggedIn = asyncHandler(async (req, res, next) => {
 });
 
 export const signup = [
+  ...signupLimiter,
   isNotLoggedIn,
   usernameValidation,
   body("password")
@@ -65,6 +71,7 @@ export const signup = [
     })
     .escape(),
   validate,
+  ...registerLimiter,
   asyncHandler(async (req, res) => {
     await User.create({
       username: req.body.username,
@@ -81,6 +88,7 @@ const signToken = async (id: Types.ObjectId, username: string) => {
 };
 
 export const login = [
+  ...loginLimiter,
   isNotLoggedIn,
   body("username")
     .trim()

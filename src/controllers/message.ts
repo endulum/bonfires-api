@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import { body } from "express-validator";
 
 import { validate } from "../middleware/validate";
+import { messageLimiter } from "../middleware/rateLimiter";
 import { Message } from "../../mongoose/models/message";
 import { Event } from "../../mongoose/models/event";
 import * as channel from "./channel";
@@ -16,6 +17,7 @@ export const validation = body("content")
   .escape();
 
 export const create = [
+  ...messageLimiter,
   ...channel.isInChannel,
   validation,
   validate,

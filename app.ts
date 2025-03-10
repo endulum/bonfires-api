@@ -4,6 +4,8 @@ import asyncHandler from "express-async-handler";
 import cors from "cors";
 import logger from "morgan";
 import multer from "multer";
+import compression from "compression";
+import helmet from "helmet";
 
 import { Server } from "socket.io";
 import { createServer } from "http";
@@ -26,6 +28,14 @@ const io = new Server(server, {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(compression());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
 app.use(express.json());
