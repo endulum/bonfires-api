@@ -12,8 +12,8 @@
     "dev": "NODE_ENV=development nodemon --exec ts-node ./app.ts",
     "test": "NODE_ENV=test jest --runInBand --watch",
     "build": "NODE_ENV=production tsc -p tsconfig.json",
-    "build:start": "NODE_ENV=production node ./dist/app.js",
-    "build:clean": "rm -r ./dist"
+    "build:clean": "rm -r ./dist",
+    "start": "NODE_ENV=production node ./dist/app.js"
   },
   "keywords": [],
   "author": "",
