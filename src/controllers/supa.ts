@@ -73,6 +73,7 @@ export const uploadUserAvatar = [
 export const serveChannelAvatar = [
   channelExists,
   asyncHandler(async (req, res) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     const defaultAvatarPath = path.join(
       __dirname,
       "..",
@@ -101,6 +102,7 @@ export const serveChannelAvatar = [
 export const serveUserAvatar = [
   userExists,
   asyncHandler(async (req, res) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     const defaultAvatarPath = path.join(
       __dirname,
       "..",
