@@ -8,10 +8,6 @@ import { exists as userExists, authenticate } from "./user";
 import { validate } from "../middleware/validate";
 import path from "path";
 
-function getNumberFromId(id: string) {
-  return (parseInt(id.slice(-1), 16) % 5) + 1;
-}
-
 const uploadValidation = [
   body("upload").custom(async (_value, { req }) => {
     if (!req.file) throw new Error("Please upload a file.");
@@ -62,10 +58,9 @@ export const uploadUserAvatar = [
   ...uploadValidation,
   asyncHandler(async (req, res) => {
     if (!req.file) throw new Error("No file is present.");
-    await supabase.upload(req.file!, {
+    await supabase.upload(req.file, {
       userId: req.user._id.toString(),
     });
-    await req.user.toggleHasAvatar(true);
     res.sendStatus(200);
   }),
 ];
@@ -85,10 +80,7 @@ export const serveChannelAvatar = [
       "camp.webp"
     );
 
-    console.log(defaultAvatarPath);
-
     if (!req.thisChannel.hasAvatar) {
-      console.log("this channel has hasAvatar set to false");
       res.sendFile(defaultAvatarPath);
       return;
     }
@@ -97,10 +89,8 @@ export const serveChannelAvatar = [
       channelId: req.thisChannel._id.toString(),
     });
     if (readable) {
-      console.log("this channel has an existing avatar");
       readable.pipe(res);
     } else {
-      console.log("this channel does not have an existing avatar");
       res.sendFile(defaultAvatarPath);
     }
   }),
@@ -112,26 +102,10 @@ export const serveUserAvatar = [
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     res.set("Content-Type", "image/webp");
     res.set("Cache-Control", "max-age=120");
-
-    const defaultAvatarPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "assets",
-      `user-${getNumberFromId(req.thisUser._id.toString())}.webp`
-    );
-    if (!req.thisUser.hasAvatar) {
-      res.sendFile(defaultAvatarPath);
-      return;
-    }
-
     const readable = await supabase.getReadable({
       userId: req.thisUser._id.toString(),
     });
-    if (readable) {
-      readable.pipe(res);
-    } else {
-      res.sendFile(defaultAvatarPath);
-    }
+    if (readable) readable.pipe(res);
+    else res.sendStatus(404);
   }),
 ];
