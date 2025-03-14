@@ -74,6 +74,9 @@ export const serveChannelAvatar = [
   channelExists,
   asyncHandler(async (req, res) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.set("Content-Type", "image/webp");
+    res.set("Cache-Control", "max-age=120");
+
     const defaultAvatarPath = path.join(
       __dirname,
       "..",
@@ -90,8 +93,6 @@ export const serveChannelAvatar = [
       channelId: req.thisChannel._id.toString(),
     });
     if (readable) {
-      res.set("Content-Type", "image/webp");
-      res.set("Cache-Control", "max-age=120");
       readable.pipe(res);
     } else {
       res.sendFile(defaultAvatarPath);
@@ -103,6 +104,9 @@ export const serveUserAvatar = [
   userExists,
   asyncHandler(async (req, res) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.set("Content-Type", "image/webp");
+    res.set("Cache-Control", "max-age=120");
+
     const defaultAvatarPath = path.join(
       __dirname,
       "..",
@@ -119,8 +123,6 @@ export const serveUserAvatar = [
       userId: req.thisUser._id.toString(),
     });
     if (readable) {
-      res.set("Content-Type", "image/webp");
-      res.set("Cache-Control", "max-age=120");
       readable.pipe(res);
     } else {
       res.sendFile(defaultAvatarPath);
