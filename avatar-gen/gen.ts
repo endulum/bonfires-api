@@ -30,7 +30,7 @@ export async function generateUserAvatar() {
             animals[Math.floor(Math.random() * animals.length)]
           )
         )
-          .resize(60, 60)
+          .resize(90, 90)
           .negate({ alpha: false })
           .toBuffer(),
         gravity: "center",
