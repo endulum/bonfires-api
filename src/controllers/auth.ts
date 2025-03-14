@@ -73,14 +73,10 @@ export const signup = [
   validate,
   ...registerLimiter,
   asyncHandler(async (req, res) => {
-    const user = await User.create({
+    await User.create({
       username: req.body.username,
       password: req.body.password,
     });
-    if (process.env.NODE_ENV !== "test") {
-      const module = await import("../../supabase/client");
-      await module.createUserAvatar(user._id.toString());
-    }
     res.sendStatus(200);
   }),
 ];

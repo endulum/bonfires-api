@@ -92,10 +92,15 @@ userSchema.method("comparePassword", async function (password: string) {
 });
 
 userSchema.pre("save", async function (next) {
-  // create UserSettings object if User is new
   if (this.isNew) {
+    // create UserSettings object if User is new
     const settings = await UserSettings.create({ user: this });
     this.settings = settings._id;
+    // generate new avatar
+    if (process.env.NODE_ENV !== "test") {
+      const module = await import("../../supabase/client");
+      await module.createUserAvatar(this._id.toString());
+    }
   }
   // hash incoming new password
   if (this.password && this.isModified("password")) {
