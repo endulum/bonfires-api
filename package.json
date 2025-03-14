@@ -12,7 +12,7 @@
     "mtgen": "npx mtgen ./mongoose/models/ -o ./mongoose/interfaces/",
     "dev": "NODE_ENV=development nodemon --exec ts-node ./app.ts",
     "test": "NODE_ENV=test jest --runInBand --watch",
-    "build": "NODE_ENV=production tsc -p tsconfig.json && cp -r ./assets ./dist/assets && cp -r ./avatar-gen ./dist/avatar-gen",
+    "build": "NODE_ENV=production tsc -p tsconfig.json && cp -r ./assets ./dist/assets && cp -r ./avatar-gen/animals ./dist/avatar-gen/animals",
     "build:clean": "rm -r ./dist",
     "start": "NODE_ENV=production node ./dist/app.js"
   },
