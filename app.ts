@@ -31,7 +31,16 @@ const upload = multer({ storage });
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(compression());
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https:"],
+      },
+    },
+  })
+);
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 
 app.use(express.json());
