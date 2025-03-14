@@ -5,12 +5,12 @@ import fs from "fs/promises";
 export async function generateUserAvatar() {
   const animals = await fs.readdir(path.resolve(__dirname, "assets"));
   const colors = [
-    "#eb6f92",
-    "#f6c177",
-    "#ebbcba",
-    "#31748f",
-    "#9ccfd8",
-    "#c4a7e7",
+    "#b4637a",
+    "#ea9d34",
+    "#d7827e",
+    "#286983",
+    "#56949f",
+    "#907aa9",
   ];
 
   const buffer = await sharp({
