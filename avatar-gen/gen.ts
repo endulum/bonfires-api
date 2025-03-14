@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs/promises";
 
 export async function generateUserAvatar() {
-  const animals = await fs.readdir(path.resolve(__dirname, "assets"));
+  const animals = await fs.readdir(path.resolve(__dirname, "animals"));
   const colors = [
     "#b4637a",
     "#ea9d34",
@@ -26,7 +26,7 @@ export async function generateUserAvatar() {
         input: await sharp(
           path.resolve(
             __dirname,
-            "assets",
+            "animals",
             animals[Math.floor(Math.random() * animals.length)]
           )
         )
