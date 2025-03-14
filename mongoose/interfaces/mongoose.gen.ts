@@ -471,7 +471,6 @@ export type User = {
   ghUser?: string;
   ghId?: number;
   settings: UserSettings["_id"] | UserSettings;
-  hasAvatar: boolean;
   _id: mongoose.Types.ObjectId;
   channelSettings: any;
 };
@@ -511,7 +510,6 @@ export type UserMethods = {
   updateDetails: (this: UserDocument, ...args: any[]) => any;
   updateGitHubUser: (this: UserDocument, ...args: any[]) => any;
   comparePassword: (this: UserDocument, ...args: any[]) => any;
-  toggleHasAvatar: (this: UserDocument, ...args: any[]) => any;
 };
 
 export type UserStatics = {};
@@ -561,7 +559,6 @@ export type UserDocument = mongoose.Document<
     ghUser?: string;
     ghId?: number;
     settings: UserSettingsDocument["_id"] | UserSettingsDocument;
-    hasAvatar: boolean;
     _id: mongoose.Types.ObjectId;
     channelSettings: any;
   };

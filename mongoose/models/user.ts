@@ -32,7 +32,6 @@ const userSchema: UserSchema = new Schema(
       required: true,
       default: () => new mongoose.Types.ObjectId(),
     },
-    hasAvatar: { type: Boolean, required: true, default: false },
   },
   { id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -90,11 +89,6 @@ userSchema.method("comparePassword", async function (password: string) {
     .select("+password");
   if (!user || !user.password) return false;
   return bcrypt.compare(password, user.password as string);
-});
-
-userSchema.method("toggleHasAvatar", async function (hasAvatar: boolean) {
-  this.hasAvatar = hasAvatar;
-  await this.save();
 });
 
 userSchema.pre("save", async function (next) {
