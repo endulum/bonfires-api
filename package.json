@@ -8,10 +8,11 @@
     "envinit:overwrite": "cp .env.example .env.production && cp .env.example .env.development && cp .env.example .env.test",
     "play": "npx nodemon _playground.ts",
     "reset": "NODE_ENV=development npx dotenv-cli -e .env.development -- npx nodemon ./mongoose/reset.ts",
+    "reset:prod": "NODE_ENV=production npx dotenv-cli -e .env.production -- npx nodemon ./mongoose/reset.ts",
     "mtgen": "npx mtgen ./mongoose/models/ -o ./mongoose/interfaces/",
     "dev": "NODE_ENV=development nodemon --exec ts-node ./app.ts",
     "test": "NODE_ENV=test jest --runInBand --watch",
-    "build": "NODE_ENV=production tsc -p tsconfig.json",
+    "build": "NODE_ENV=production tsc -p tsconfig.json && cp -r ./assets ./dist/assets",
     "build:clean": "rm -r ./dist",
     "start": "NODE_ENV=production node ./dist/app.js"
   },
