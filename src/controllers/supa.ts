@@ -84,7 +84,11 @@ export const serveChannelAvatar = [
       "assets",
       "camp.webp"
     );
+
+    console.log(defaultAvatarPath);
+
     if (!req.thisChannel.hasAvatar) {
+      console.log("this channel has hasAvatar set to false");
       res.sendFile(defaultAvatarPath);
       return;
     }
@@ -93,8 +97,10 @@ export const serveChannelAvatar = [
       channelId: req.thisChannel._id.toString(),
     });
     if (readable) {
+      console.log("this channel has an existing avatar");
       readable.pipe(res);
     } else {
+      console.log("this channel does not have an existing avatar");
       res.sendFile(defaultAvatarPath);
     }
   }),
