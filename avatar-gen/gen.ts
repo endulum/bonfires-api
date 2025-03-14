@@ -2,7 +2,7 @@ import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
 
-async function main() {
+export async function generateUserAvatar() {
   const animals = await fs.readdir(path.resolve(__dirname, "assets"));
   const colors = [
     "#eb6f92",
@@ -13,10 +13,10 @@ async function main() {
     "#c4a7e7",
   ];
 
-  await sharp({
+  const buffer = await sharp({
     create: {
-      width: 100,
-      height: 100,
+      width: 150,
+      height: 150,
       channels: 4,
       background: colors[Math.floor(Math.random() * colors.length)],
     },
@@ -37,7 +37,16 @@ async function main() {
       },
     ])
     .webp({ nearLossless: true })
-    .toFile(path.resolve(__dirname, "solid-color-square.webp"));
+    .toBuffer();
+
+  return buffer;
 }
 
-main().catch((e) => console.error(e));
+/*
+
+- automatically generate new pfps for all new users
+- create screenshots
+- automatically generate starter welcome channel for all new users
+- readme
+
+*/

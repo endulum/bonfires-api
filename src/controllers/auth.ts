@@ -73,10 +73,14 @@ export const signup = [
   validate,
   ...registerLimiter,
   asyncHandler(async (req, res) => {
-    await User.create({
+    const { id } = await User.create({
       username: req.body.username,
       password: req.body.password,
     });
+    if (process.env.NODE_ENV !== "test") {
+      const module = await import("../../supabase/client");
+      await module.createUserAvatar(id);
+    }
     res.sendStatus(200);
   }),
 ];
@@ -174,7 +178,7 @@ export const github = [
         const module = await import("../../supabase/client");
         if (id) {
           await module.uploadFromUrl(githubUser.avatar_url, id.toString());
-          await newUser.toggleHasAvatar(true);
+          /* await newUser.toggleHasAvatar(true); */
         }
       }
     }

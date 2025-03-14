@@ -4,6 +4,7 @@ import { ofetch } from "ofetch";
 import { Readable } from "stream";
 
 import * as redis from "../redis/client";
+import { generateUserAvatar } from "../avatar-gen/gen";
 
 const supabase = createClient(
   process.env.SUPABASE_URL ||
@@ -35,12 +36,14 @@ export async function empty() {
   if (deleteError) throw deleteError;
 }
 
-function sharedToNormal(buffer: SharedArrayBuffer) {
-  const arrayBuffer = new ArrayBuffer(buffer.byteLength);
-  const source = new Uint8Array(buffer);
-  const target = new Uint8Array(arrayBuffer);
-  target.set(source);
-  return arrayBuffer;
+function sharedToNormal(buffer: ArrayBuffer | SharedArrayBuffer) {
+  if (buffer instanceof SharedArrayBuffer) {
+    const arrayBuffer = new ArrayBuffer(buffer.byteLength);
+    const source = new Uint8Array(buffer);
+    const target = new Uint8Array(arrayBuffer);
+    target.set(source);
+    return arrayBuffer;
+  } else return buffer;
 }
 
 export async function getWebpBuffer(buffer: Buffer): Promise<ArrayBuffer> {
@@ -52,9 +55,7 @@ export async function getWebpBuffer(buffer: Buffer): Promise<ArrayBuffer> {
     })
     .webp()
     .toBuffer();
-  if (webpBuffer.buffer instanceof SharedArrayBuffer)
-    return sharedToNormal(webpBuffer.buffer);
-  else return webpBuffer.buffer;
+  return sharedToNormal(webpBuffer.buffer);
 }
 
 export async function upload(
@@ -133,6 +134,19 @@ export async function uploadFromUrl(url: string, userId: string) {
   const arrayBuffer = await getWebpBuffer(Buffer.from(ghBuffer));
 
   // finally, upload
+  const filePath = `userAvatars/${userId}`;
+  const { error } = await supabase.storage
+    .from(bucketName)
+    .upload(filePath, arrayBuffer, { contentType: "image/webp", upsert: true });
+  if (error) {
+    console.warn("Could not upload GitHub avatar", error);
+    return;
+  }
+  redis.addCachedFile(filePath, Buffer.from(arrayBuffer));
+}
+
+export async function createUserAvatar(userId: string) {
+  const arrayBuffer = sharedToNormal((await generateUserAvatar()).buffer);
   const filePath = `userAvatars/${userId}`;
   const { error } = await supabase.storage
     .from(bucketName)
